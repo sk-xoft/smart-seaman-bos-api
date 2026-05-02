@@ -1,0 +1,5 @@
+[{
+  "relation": ["delegate_permission/common.handle_all_urls"],
+  "target" : { "namespace": "android_app", "package_name": "com.smart.smartseaman",
+               "sha256_cert_fingerprints": ["35:EE:B4:AE:F6:0B:45:E2:4A:B7:F2:04:3D:21:5C:D2:3C:90:03:A4:40:FC:FC:85:52:91:B2:1D:DD:9D:D6:41"] }
+}]
