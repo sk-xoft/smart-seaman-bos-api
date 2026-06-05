@@ -1,6 +1,6 @@
 # Use official base image of Java Runtim
 #FROM openjdk:11-slim-buster
-FROM openjdk:11
+FROM eclipse-temurin:11-jre
 
 RUN apt-get update
 

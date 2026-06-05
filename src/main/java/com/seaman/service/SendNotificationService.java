@@ -16,7 +16,6 @@ import com.seaman.utils.ExternalApiUtils;
 import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
 import org.springframework.stereotype.Service;
@@ -33,12 +32,6 @@ public class SendNotificationService {
     private final FcmRepository fcmRepository;
     private final ExternalApiUtils externalApiUtils;
     private final GlobalEventPublisher eventPublisher;
-
-    @Value("${fcm.url}")
-    private String fcmNotificationUrl;
-
-    @Value("${fcm.auth}")
-    private String fcmAuth;
 
 //    public void sendNotiNews(String to, String notiType, String bodyMessage, String valueId, String titleMessage) {
 //        try {

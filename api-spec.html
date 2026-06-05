@@ -1,0 +1,1244 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Smart Seaman BOS API — Reference</title>
+<style>
+  :root {
+    --bg: #0f1117;
+    --sidebar-bg: #161b22;
+    --card-bg: #1c2128;
+    --border: #30363d;
+    --text: #e6edf3;
+    --text-muted: #8b949e;
+    --accent: #58a6ff;
+    --get: #388bfd;
+    --post: #3fb950;
+    --delete: #f85149;
+    --put: #d29922;
+    --patch: #a371f7;
+    --badge-public-bg: #1a3a2a;
+    --badge-public: #3fb950;
+    --badge-auth-bg: #2a1f3a;
+    --badge-auth: #a371f7;
+    --code-bg: #0d1117;
+    --sidebar-w: 260px;
+    --header-h: 56px;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: var(--bg); color: var(--text); font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; font-size: 14px; line-height: 1.6; }
+
+  /* Header */
+  .site-header {
+    position: fixed; top: 0; left: 0; right: 0; height: var(--header-h);
+    background: var(--sidebar-bg); border-bottom: 1px solid var(--border);
+    display: flex; align-items: center; padding: 0 24px; z-index: 100; gap: 16px;
+  }
+  .site-header h1 { font-size: 17px; font-weight: 600; color: var(--text); }
+  .site-header .version { font-size: 12px; background: var(--border); padding: 2px 8px; border-radius: 12px; color: var(--text-muted); }
+  .site-header .base-url { font-size: 12px; color: var(--text-muted); margin-left: auto; font-family: monospace; }
+  .site-header .base-url span { color: var(--accent); }
+
+  /* Layout */
+  .layout { display: flex; padding-top: var(--header-h); min-height: 100vh; }
+
+  /* Sidebar */
+  .sidebar {
+    width: var(--sidebar-w); flex-shrink: 0; position: fixed;
+    top: var(--header-h); bottom: 0; left: 0;
+    overflow-y: auto; background: var(--sidebar-bg);
+    border-right: 1px solid var(--border); padding: 16px 0;
+  }
+  .sidebar::-webkit-scrollbar { width: 4px; }
+  .sidebar::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+  .sidebar-section { margin-bottom: 4px; }
+  .sidebar-group {
+    display: flex; align-items: center; gap: 6px;
+    padding: 6px 16px; font-size: 12px; font-weight: 600;
+    color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px;
+    cursor: pointer; user-select: none;
+  }
+  .sidebar-group:hover { color: var(--text); }
+  .sidebar-link {
+    display: flex; align-items: center; gap: 8px;
+    padding: 5px 16px 5px 28px; text-decoration: none;
+    color: var(--text-muted); font-size: 13px; border-radius: 0;
+    transition: background 0.1s, color 0.1s;
+  }
+  .sidebar-link:hover { background: rgba(88,166,255,0.08); color: var(--text); }
+  .sidebar-link .method-dot { width: 6px; height: 6px; border-radius: 50%; flex-shrink: 0; }
+  .dot-get { background: var(--get); }
+  .dot-post { background: var(--post); }
+  .dot-delete { background: var(--delete); }
+  .dot-put { background: var(--put); }
+
+  /* Main content */
+  .main { margin-left: var(--sidebar-w); flex: 1; padding: 32px 40px 80px; max-width: 900px; }
+
+  /* Auth info box */
+  .auth-box {
+    background: var(--card-bg); border: 1px solid var(--border);
+    border-radius: 8px; padding: 20px 24px; margin-bottom: 32px;
+  }
+  .auth-box h2 { font-size: 16px; margin-bottom: 12px; color: var(--text); }
+  .auth-box p { color: var(--text-muted); margin-bottom: 10px; }
+  .header-table { width: 100%; border-collapse: collapse; margin-top: 8px; }
+  .header-table th, .header-table td { text-align: left; padding: 6px 12px; font-size: 13px; border-bottom: 1px solid var(--border); }
+  .header-table th { color: var(--text-muted); font-weight: 500; }
+  .header-table td:first-child { font-family: monospace; color: var(--accent); }
+  .note { font-size: 12px; color: var(--text-muted); margin-top: 10px; background: var(--code-bg); padding: 8px 12px; border-radius: 6px; border-left: 3px solid var(--accent); }
+
+  /* Section heading */
+  .section-heading {
+    display: flex; align-items: center; gap: 10px;
+    margin: 40px 0 16px; padding-bottom: 12px; border-bottom: 1px solid var(--border);
+  }
+  .section-heading h2 { font-size: 20px; font-weight: 600; }
+
+  /* Endpoint card */
+  .endpoint-card {
+    background: var(--card-bg); border: 1px solid var(--border);
+    border-radius: 8px; margin-bottom: 12px; overflow: hidden;
+  }
+  .endpoint-header {
+    display: flex; align-items: center; gap: 12px; padding: 14px 18px;
+    cursor: pointer; user-select: none;
+  }
+  .endpoint-header:hover { background: rgba(255,255,255,0.03); }
+  .method-badge {
+    font-size: 11px; font-weight: 700; padding: 3px 8px; border-radius: 4px;
+    min-width: 58px; text-align: center; letter-spacing: 0.5px; font-family: monospace;
+  }
+  .badge-get    { background: rgba(56,139,253,0.15); color: #58a6ff; border: 1px solid rgba(56,139,253,0.3); }
+  .badge-post   { background: rgba(63,185,80,0.15);  color: #3fb950; border: 1px solid rgba(63,185,80,0.3); }
+  .badge-delete { background: rgba(248,81,73,0.15);  color: #f85149; border: 1px solid rgba(248,81,73,0.3); }
+  .badge-put    { background: rgba(210,153,34,0.15); color: #d29922; border: 1px solid rgba(210,153,34,0.3); }
+  .endpoint-path { font-family: monospace; font-size: 14px; color: var(--text); flex: 1; }
+  .auth-badge {
+    font-size: 11px; padding: 2px 8px; border-radius: 12px; font-weight: 500;
+  }
+  .auth-badge.protected { background: var(--badge-auth-bg); color: var(--badge-auth); border: 1px solid var(--badge-auth); }
+  .auth-badge.public    { background: var(--badge-public-bg); color: var(--badge-public); border: 1px solid var(--badge-public); }
+  .chevron { color: var(--text-muted); font-size: 12px; transition: transform 0.2s; }
+  .endpoint-card.open .chevron { transform: rotate(90deg); }
+
+  .endpoint-body { display: none; border-top: 1px solid var(--border); padding: 18px; }
+  .endpoint-card.open .endpoint-body { display: block; }
+
+  .subsection-title { font-size: 12px; font-weight: 600; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; margin: 14px 0 6px; }
+  .subsection-title:first-child { margin-top: 0; }
+
+  code, .code-block {
+    font-family: 'SFMono-Regular', Consolas, monospace; font-size: 13px;
+  }
+  .code-block {
+    background: var(--code-bg); border: 1px solid var(--border); border-radius: 6px;
+    padding: 12px 16px; overflow-x: auto; white-space: pre; color: var(--text); line-height: 1.5;
+  }
+  .inline-code {
+    background: var(--code-bg); border: 1px solid var(--border); border-radius: 4px;
+    padding: 1px 5px; font-family: monospace; font-size: 12px; color: #d2a8ff;
+  }
+  .params-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  .params-table th { text-align: left; padding: 5px 10px; color: var(--text-muted); font-weight: 500; border-bottom: 1px solid var(--border); font-size: 12px; }
+  .params-table td { padding: 5px 10px; border-bottom: 1px solid rgba(48,54,61,0.5); vertical-align: top; }
+  .params-table td:first-child { font-family: monospace; color: #79c0ff; }
+  .params-table td:nth-child(2) { color: var(--text-muted); font-size: 12px; }
+  .required { color: #f85149; font-size: 10px; font-weight: 700; vertical-align: super; }
+
+  /* Color highlights in JSON */
+  .json-key    { color: #79c0ff; }
+  .json-str    { color: #a5d6ff; }
+  .json-num    { color: #f2cc60; }
+  .json-bool   { color: #ff7b72; }
+  .json-null   { color: var(--text-muted); }
+</style>
+</head>
+<body>
+
+<header class="site-header">
+  <h1>Smart Seaman BOS API</h1>
+  <span class="version">v1</span>
+  <span class="base-url">Base URL: <span>http://localhost:20000</span></span>
+</header>
+
+<div class="layout">
+
+<!-- SIDEBAR -->
+<nav class="sidebar">
+  <div class="sidebar-section">
+    <div class="sidebar-group">🔐 Auth</div>
+    <a class="sidebar-link" href="#auth-login"><span class="method-dot dot-post"></span>Login</a>
+    <a class="sidebar-link" href="#auth-register"><span class="method-dot dot-post"></span>Register</a>
+    <a class="sidebar-link" href="#auth-profile"><span class="method-dot dot-get"></span>Get Profile</a>
+  </div>
+  <div class="sidebar-section">
+    <div class="sidebar-group">👤 Admin</div>
+    <a class="sidebar-link" href="#admin-list"><span class="method-dot dot-post"></span>List Admin</a>
+    <a class="sidebar-link" href="#admin-get"><span class="method-dot dot-get"></span>Get by ID</a>
+    <a class="sidebar-link" href="#admin-add"><span class="method-dot dot-post"></span>Create</a>
+    <a class="sidebar-link" href="#admin-update"><span class="method-dot dot-post"></span>Update</a>
+    <a class="sidebar-link" href="#admin-delete"><span class="method-dot dot-post"></span>Delete</a>
+    <a class="sidebar-link" href="#admin-pic"><span class="method-dot dot-get"></span>Profile Pic</a>
+    <a class="sidebar-link" href="#admin-password"><span class="method-dot dot-post"></span>Update Password</a>
+  </div>
+  <div class="sidebar-section">
+    <div class="sidebar-group">📋 Master Data</div>
+    <a class="sidebar-link" href="#master-all"><span class="method-dot dot-get"></span>All Master</a>
+    <a class="sidebar-link" href="#master-schools"><span class="method-dot dot-get"></span>Schools</a>
+    <a class="sidebar-link" href="#master-companys"><span class="method-dot dot-get"></span>Companies</a>
+    <a class="sidebar-link" href="#master-course"><span class="method-dot dot-get"></span>Course Names</a>
+    <a class="sidebar-link" href="#master-group"><span class="method-dot dot-get"></span>Group Names</a>
+    <a class="sidebar-link" href="#master-menu"><span class="method-dot dot-get"></span>Menu</a>
+    <a class="sidebar-link" href="#master-documents"><span class="method-dot dot-get"></span>Documents</a>
+  </div>
+  <div class="sidebar-section">
+    <div class="sidebar-group">📰 News</div>
+    <a class="sidebar-link" href="#news-list"><span class="method-dot dot-post"></span>List News</a>
+    <a class="sidebar-link" href="#news-get"><span class="method-dot dot-get"></span>Get by ID</a>
+    <a class="sidebar-link" href="#news-add"><span class="method-dot dot-post"></span>Create</a>
+    <a class="sidebar-link" href="#news-update"><span class="method-dot dot-post"></span>Update</a>
+    <a class="sidebar-link" href="#news-delete"><span class="method-dot dot-post"></span>Delete</a>
+    <a class="sidebar-link" href="#news-preview"><span class="method-dot dot-get"></span>Preview</a>
+    <a class="sidebar-link" href="#news-noti"><span class="method-dot dot-post"></span>Send Notification</a>
+  </div>
+  <div class="sidebar-section">
+    <div class="sidebar-group">📚 Course</div>
+    <a class="sidebar-link" href="#course-list"><span class="method-dot dot-post"></span>List Courses</a>
+    <a class="sidebar-link" href="#course-get"><span class="method-dot dot-get"></span>Get by ID</a>
+    <a class="sidebar-link" href="#course-add"><span class="method-dot dot-post"></span>Create</a>
+    <a class="sidebar-link" href="#course-update"><span class="method-dot dot-post"></span>Update</a>
+    <a class="sidebar-link" href="#course-delete"><span class="method-dot dot-post"></span>Delete</a>
+  </div>
+  <div class="sidebar-section">
+    <div class="sidebar-group">📄 Document (Form)</div>
+    <a class="sidebar-link" href="#form-list"><span class="method-dot dot-post"></span>List Forms</a>
+    <a class="sidebar-link" href="#form-get"><span class="method-dot dot-get"></span>Get by ID</a>
+    <a class="sidebar-link" href="#form-add"><span class="method-dot dot-post"></span>Create</a>
+    <a class="sidebar-link" href="#form-update"><span class="method-dot dot-post"></span>Update</a>
+    <a class="sidebar-link" href="#form-delete"><span class="method-dot dot-post"></span>Delete</a>
+    <a class="sidebar-link" href="#form-download"><span class="method-dot dot-get"></span>Download</a>
+  </div>
+  <div class="sidebar-section">
+    <div class="sidebar-group">🖼️ Banner</div>
+    <a class="sidebar-link" href="#banner-list"><span class="method-dot dot-post"></span>List Banners</a>
+    <a class="sidebar-link" href="#banner-add"><span class="method-dot dot-post"></span>Create</a>
+    <a class="sidebar-link" href="#banner-delete"><span class="method-dot dot-post"></span>Delete</a>
+    <a class="sidebar-link" href="#banner-preview"><span class="method-dot dot-get"></span>Preview</a>
+  </div>
+  <div class="sidebar-section">
+    <div class="sidebar-group">🎫 Voucher</div>
+    <a class="sidebar-link" href="#voucher-list"><span class="method-dot dot-post"></span>List Vouchers</a>
+    <a class="sidebar-link" href="#voucher-add"><span class="method-dot dot-post"></span>Create</a>
+    <a class="sidebar-link" href="#voucher-delete"><span class="method-dot dot-delete"></span>Delete</a>
+    <a class="sidebar-link" href="#voucher-get"><span class="method-dot dot-get"></span>Get by ID</a>
+  </div>
+  <div class="sidebar-section">
+    <div class="sidebar-group">📱 Mobile User</div>
+    <a class="sidebar-link" href="#mobile-list"><span class="method-dot dot-post"></span>List Users</a>
+    <a class="sidebar-link" href="#mobile-profile"><span class="method-dot dot-get"></span>Profile</a>
+    <a class="sidebar-link" href="#mobile-stats"><span class="method-dot dot-get"></span>Statistics</a>
+    <a class="sidebar-link" href="#mobile-codes"><span class="method-dot dot-get"></span>Code List</a>
+  </div>
+  <div class="sidebar-section">
+    <div class="sidebar-group">📜 Certification</div>
+    <a class="sidebar-link" href="#cert-cot"><span class="method-dot dot-post"></span>List COT</a>
+    <a class="sidebar-link" href="#cert-doc"><span class="method-dot dot-post"></span>List Docs</a>
+    <a class="sidebar-link" href="#cert-create"><span class="method-dot dot-post"></span>Create</a>
+    <a class="sidebar-link" href="#cert-update"><span class="method-dot dot-post"></span>Update</a>
+    <a class="sidebar-link" href="#cert-delete"><span class="method-dot dot-delete"></span>Delete</a>
+    <a class="sidebar-link" href="#cert-edit"><span class="method-dot dot-get"></span>Edit</a>
+  </div>
+  <div class="sidebar-section">
+    <div class="sidebar-group">🗂️ Menu &amp; Group</div>
+    <a class="sidebar-link" href="#menu-list"><span class="method-dot dot-post"></span>List Menu</a>
+    <a class="sidebar-link" href="#menu-auth"><span class="method-dot dot-post"></span>Get Authorised</a>
+    <a class="sidebar-link" href="#group-list"><span class="method-dot dot-post"></span>List Groups</a>
+    <a class="sidebar-link" href="#group-add"><span class="method-dot dot-post"></span>Create Group</a>
+    <a class="sidebar-link" href="#group-update"><span class="method-dot dot-post"></span>Update Group</a>
+    <a class="sidebar-link" href="#group-delete"><span class="method-dot dot-post"></span>Delete Group</a>
+  </div>
+  <div class="sidebar-section">
+    <div class="sidebar-group">🏠 System</div>
+    <a class="sidebar-link" href="#sys-health"><span class="method-dot dot-get"></span>Health Check</a>
+  </div>
+</nav>
+
+<!-- MAIN -->
+<main class="main">
+
+  <!-- Auth Info -->
+  <div class="auth-box">
+    <h2>Authentication &amp; Required Headers</h2>
+    <p>Every <code class="inline-code">/v1/**</code> request must include the following headers:</p>
+    <table class="header-table">
+      <tr><th>Header</th><th>Example</th><th>Description</th></tr>
+      <tr><td>language</td><td>TH</td><td>Response language: TH or EN</td></tr>
+      <tr><td>devicemodel</td><td>Postman</td><td>Client device model identifier</td></tr>
+      <tr><td>correlationid</td><td>req-trace-001</td><td>Unique request trace ID for logging</td></tr>
+    </table>
+    <p style="margin-top:14px">Protected endpoints additionally require:</p>
+    <table class="header-table">
+      <tr><th>Header</th><th>Example</th><th>Description</th></tr>
+      <tr><td>Authorization</td><td>Bearer &lt;jwt_token&gt;</td><td>JWT from POST /v1/login</td></tr>
+    </table>
+    <div class="note">
+      <strong>JWT Flow:</strong> Call <code class="inline-code">POST /v1/login</code> → receive <code class="inline-code">data.token</code> →
+      set <code class="inline-code">Authorization: Bearer {token}</code> on all protected requests.<br>
+      Session is single-device: logging in elsewhere invalidates the previous token.
+    </div>
+    <p style="margin-top: 12px; color: var(--text-muted); font-size: 13px;">
+      Response envelope: <code class="inline-code">{ "code": "...", "description": "...", "data": { ... } }</code>
+    </p>
+  </div>
+
+  <!-- ==================== AUTH ==================== -->
+  <div class="section-heading" id="auth"><h2>🔐 Auth</h2></div>
+
+  <div class="endpoint-card" id="auth-login">
+    <div class="endpoint-header" onclick="toggle(this)">
+      <span class="method-badge badge-post">POST</span>
+      <span class="endpoint-path">/v1/login</span>
+      <span class="auth-badge public">Public</span>
+      <span class="chevron">▶</span>
+    </div>
+    <div class="endpoint-body">
+      <div class="subsection-title">Request Body</div>
+      <div class="code-block">{
+  "<span class="json-key">username</span>": <span class="json-str">"admin"</span>,
+  "<span class="json-key">password</span>": <span class="json-str">"P@ssw0rd"</span>
+}</div>
+      <div class="subsection-title">Response</div>
+      <div class="code-block">{
+  "<span class="json-key">code</span>": <span class="json-str">"0000"</span>,
+  "<span class="json-key">description</span>": <span class="json-str">"Success"</span>,
+  "<span class="json-key">data</span>": {
+    "<span class="json-key">token</span>": <span class="json-str">"eyJhbGci..."</span>,
+    "<span class="json-key">refToken</span>": <span class="json-str">"eyJhbGci..."</span>,
+    "<span class="json-key">username</span>": <span class="json-str">"admin"</span>,
+    "<span class="json-key">lastLoginDateTime</span>": <span class="json-str">"2024-01-01 10:00:00"</span>
+  }
+}</div>
+    </div>
+  </div>
+
+  <div class="endpoint-card" id="auth-register">
+    <div class="endpoint-header" onclick="toggle(this)">
+      <span class="method-badge badge-post">POST</span>
+      <span class="endpoint-path">/v1/register</span>
+      <span class="auth-badge public">Public</span>
+      <span class="chevron">▶</span>
+    </div>
+    <div class="endpoint-body">
+      <div class="subsection-title">Request Body</div>
+      <div class="code-block">{
+  "<span class="json-key">firstName</span>": <span class="json-str">"Test"</span>,
+  "<span class="json-key">lastName</span>": <span class="json-str">"User"</span>,
+  "<span class="json-key">companyCode</span>": <span class="json-str">"SSM001"</span>,
+  "<span class="json-key">positionCode</span>": <span class="json-str">"POS001"</span>,    <span class="json-null">// required</span>
+  "<span class="json-key">email</span>": <span class="json-str">"test@example.com"</span>,      <span class="json-null">// required</span>
+  "<span class="json-key">password</span>": <span class="json-str">"P@ssw0rd"</span>,            <span class="json-null">// required</span>
+  "<span class="json-key">mobileNumber</span>": <span class="json-str">"0812345678"</span>         <span class="json-null">// required</span>
+}</div>
+    </div>
+  </div>
+
+  <div class="endpoint-card" id="auth-profile">
+    <div class="endpoint-header" onclick="toggle(this)">
+      <span class="method-badge badge-get">GET</span>
+      <span class="endpoint-path">/v1/profile</span>
+      <span class="auth-badge protected">🔒 JWT</span>
+      <span class="chevron">▶</span>
+    </div>
+    <div class="endpoint-body">
+      <div class="subsection-title">Response</div>
+      <div class="code-block">{
+  "<span class="json-key">data</span>": {
+    "<span class="json-key">firstName</span>": <span class="json-str">"John"</span>,
+    "<span class="json-key">lastName</span>": <span class="json-str">"Doe"</span>,
+    "<span class="json-key">email</span>": <span class="json-str">"john@example.com"</span>,
+    "<span class="json-key">mobile</span>": <span class="json-str">"0812345678"</span>,
+    "<span class="json-key">companyCode</span>": <span class="json-str">"SSM001"</span>,
+    "<span class="json-key">companyDescription</span>": <span class="json-str">"Smart Seaman Co."</span>,
+    "<span class="json-key">positionCode</span>": <span class="json-str">"POS001"</span>,
+    "<span class="json-key">smartSeamanId</span>": <span class="json-str">"SSM-0001"</span>
+  }
+}</div>
+    </div>
+  </div>
+
+  <!-- ==================== ADMIN ==================== -->
+  <div class="section-heading" id="admin"><h2>👤 Admin</h2></div>
+
+  <div class="endpoint-card" id="admin-list">
+    <div class="endpoint-header" onclick="toggle(this)">
+      <span class="method-badge badge-post">POST</span>
+      <span class="endpoint-path">/v1/list-admin</span>
+      <span class="auth-badge protected">🔒 JWT</span>
+      <span class="chevron">▶</span>
+    </div>
+    <div class="endpoint-body">
+      <div class="subsection-title">Request Body (pagination)</div>
+      <div class="code-block">{
+  "<span class="json-key">size</span>": <span class="json-num">10</span>,
+  "<span class="json-key">lastNum</span>": <span class="json-num">0</span>,
+  "<span class="json-key">groupId</span>": <span class="json-str">""</span>    <span class="json-null">// optional filter</span>
+}</div>
+    </div>
+  </div>
+
+  <div class="endpoint-card" id="admin-get">
+    <div class="endpoint-header" onclick="toggle(this)">
+      <span class="method-badge badge-get">GET</span>
+      <span class="endpoint-path">/v1/list-admin/{id}</span>
+      <span class="auth-badge protected">🔒 JWT</span>
+      <span class="chevron">▶</span>
+    </div>
+    <div class="endpoint-body">
+      <div class="subsection-title">Path Parameters</div>
+      <table class="params-table">
+        <tr><th>Name</th><th>Type</th><th>Description</th></tr>
+        <tr><td>id</td><td>String</td><td>Admin user ID</td></tr>
+      </table>
+    </div>
+  </div>
+
+  <div class="endpoint-card" id="admin-add">
+    <div class="endpoint-header" onclick="toggle(this)">
+      <span class="method-badge badge-post">POST</span>
+      <span class="endpoint-path">/v1/admin/add</span>
+      <span class="auth-badge protected">🔒 JWT</span>
+      <span class="chevron">▶</span>
+    </div>
+    <div class="endpoint-body">
+      <div class="subsection-title">Request Body</div>
+      <div class="code-block">{
+  "<span class="json-key">username</span>": <span class="json-str">"newadmin"</span>,
+  "<span class="json-key">password</span>": <span class="json-str">"P@ssw0rd"</span>,
+  "<span class="json-key">firstName</span>": <span class="json-str">"New"</span>,
+  "<span class="json-key">lastName</span>": <span class="json-str">"Admin"</span>,
+  "<span class="json-key">email</span>": <span class="json-str">"newadmin@example.com"</span>,
+  "<span class="json-key">mobileNumber</span>": <span class="json-str">"0812345678"</span>,
+  "<span class="json-key">companyCode</span>": <span class="json-str">"SSM001"</span>,
+  "<span class="json-key">positions</span>": <span class="json-str">"POS001"</span>,
+  "<span class="json-key">groupId</span>": <span class="json-str">"1"</span>
+}</div>
+    </div>
+  </div>
+
+  <div class="endpoint-card" id="admin-update">
+    <div class="endpoint-header" onclick="toggle(this)">
+      <span class="method-badge badge-post">POST</span>
+      <span class="endpoint-path">/v1/admin/update</span>
+      <span class="auth-badge protected">🔒 JWT</span>
+      <span class="chevron">▶</span>
+    </div>
+    <div class="endpoint-body">
+      <div class="subsection-title">Request Body</div>
+      <div class="code-block">{
+  "<span class="json-key">adminUUID</span>": <span class="json-str">"uuid-here"</span>,
+  "<span class="json-key">firstName</span>": <span class="json-str">"Updated"</span>,
+  "<span class="json-key">lastName</span>": <span class="json-str">"Admin"</span>,
+  "<span class="json-key">email</span>": <span class="json-str">"updated@example.com"</span>,
+  "<span class="json-key">userStatus</span>": <span class="json-str">"ACTIVE"</span>
+}</div>
+    </div>
+  </div>
+
+  <div class="endpoint-card" id="admin-delete">
+    <div class="endpoint-header" onclick="toggle(this)">
+      <span class="method-badge badge-post">POST</span>
+      <span class="endpoint-path">/v1/admin/delete</span>
+      <span class="auth-badge protected">🔒 JWT</span>
+      <span class="chevron">▶</span>
+    </div>
+    <div class="endpoint-body">
+      <div class="subsection-title">Request Body</div>
+      <div class="code-block">{ "<span class="json-key">adminUUID</span>": <span class="json-str">"uuid-here"</span> }</div>
+    </div>
+  </div>
+
+  <div class="endpoint-card" id="admin-pic">
+    <div class="endpoint-header" onclick="toggle(this)">
+      <span class="method-badge badge-get">GET</span>
+      <span class="endpoint-path">/v1/profile/pic</span>
+      <span class="auth-badge protected">🔒 JWT</span>
+      <span class="chevron">▶</span>
+    </div>
+    <div class="endpoint-body">
+      <p style="color: var(--text-muted); font-size: 13px;">Returns the profile picture of the currently authenticated admin.</p>
+    </div>
+  </div>
+
+  <div class="endpoint-card" id="admin-password">
+    <div class="endpoint-header" onclick="toggle(this)">
+      <span class="method-badge badge-post">POST</span>
+      <span class="endpoint-path">/v1/admin/update-password</span>
+      <span class="auth-badge protected">🔒 JWT</span>
+      <span class="chevron">▶</span>
+    </div>
+    <div class="endpoint-body">
+      <div class="subsection-title">Request Body</div>
+      <div class="code-block">{
+  "<span class="json-key">adminId</span>": <span class="json-str">"1"</span>,
+  "<span class="json-key">oldPassword</span>": <span class="json-str">"P@ssw0rd"</span>,
+  "<span class="json-key">newPassword</span>": <span class="json-str">"NewP@ss1"</span>,
+  "<span class="json-key">confirmPassword</span>": <span class="json-str">"NewP@ss1"</span>
+}</div>
+    </div>
+  </div>
+
+  <!-- ==================== MASTER DATA ==================== -->
+  <div class="section-heading" id="master"><h2>📋 Master Data <small style="font-size:14px;color:var(--text-muted);font-weight:400;">(Public)</small></h2></div>
+
+  <div class="endpoint-card" id="master-all">
+    <div class="endpoint-header" onclick="toggle(this)">
+      <span class="method-badge badge-get">GET</span>
+      <span class="endpoint-path">/v1/master</span>
+      <span class="auth-badge public">Public</span>
+      <span class="chevron">▶</span>
+    </div>
+    <div class="endpoint-body">
+      <p style="color: var(--text-muted); font-size: 13px;">Returns all master/reference data: companies, positions, schools, courses, groups, menus.</p>
+    </div>
+  </div>
+
+  <div class="endpoint-card" id="master-schools">
+    <div class="endpoint-header" onclick="toggle(this)">
+      <span class="method-badge badge-get">GET</span>
+      <span class="endpoint-path">/v1/master/schools</span>
+      <span class="auth-badge public">Public</span>
+      <span class="chevron">▶</span>
+    </div>
+    <div class="endpoint-body"><p style="color:var(--text-muted);font-size:13px;">Returns list of schools.</p></div>
+  </div>
+
+  <div class="endpoint-card" id="master-companys">
+    <div class="endpoint-header" onclick="toggle(this)">
+      <span class="method-badge badge-get">GET</span>
+      <span class="endpoint-path">/v1/master/companys &nbsp;&nbsp; /v1/master/company</span>
+      <span class="auth-badge public">Public</span>
+      <span class="chevron">▶</span>
+    </div>
+    <div class="endpoint-body"><p style="color:var(--text-muted);font-size:13px;">Returns company list. Two endpoints exist: <code class="inline-code">/master/companys</code> and <code class="inline-code">/master/company</code>.</p></div>
+  </div>
+
+  <div class="endpoint-card" id="master-course">
+    <div class="endpoint-header" onclick="toggle(this)">
+      <span class="method-badge badge-get">GET</span>
+      <span class="endpoint-path">/v1/master/course-name</span>
+      <span class="auth-badge public">Public</span>
+      <span class="chevron">▶</span>
+    </div>
+    <div class="endpoint-body"><p style="color:var(--text-muted);font-size:13px;">Returns course name reference list.</p></div>
+  </div>
+
+  <div class="endpoint-card" id="master-group">
+    <div class="endpoint-header" onclick="toggle(this)">
+      <span class="method-badge badge-get">GET</span>
+      <span class="endpoint-path">/v1/master/group-name</span>
+      <span class="auth-badge public">Public</span>
+      <span class="chevron">▶</span>
+    </div>
+    <div class="endpoint-body"><p style="color:var(--text-muted);font-size:13px;">Returns group name reference list.</p></div>
+  </div>
+
+  <div class="endpoint-card" id="master-menu">
+    <div class="endpoint-header" onclick="toggle(this)">
+      <span class="method-badge badge-get">GET</span>
+      <span class="endpoint-path">/v1/master/menu</span>
+      <span class="auth-badge public">Public</span>
+      <span class="chevron">▶</span>
+    </div>
+    <div class="endpoint-body"><p style="color:var(--text-muted);font-size:13px;">Returns menu tree reference.</p></div>
+  </div>
+
+  <div class="endpoint-card" id="master-documents">
+    <div class="endpoint-header" onclick="toggle(this)">
+      <span class="method-badge badge-get">GET</span>
+      <span class="endpoint-path">/v1/master/documents</span>
+      <span class="auth-badge public">Public</span>
+      <span class="chevron">▶</span>
+    </div>
+    <div class="endpoint-body"><p style="color:var(--text-muted);font-size:13px;">Returns document type reference list.</p></div>
+  </div>
+
+  <!-- ==================== NEWS ==================== -->
+  <div class="section-heading" id="news"><h2>📰 News</h2></div>
+
+  <div class="endpoint-card" id="news-list">
+    <div class="endpoint-header" onclick="toggle(this)">
+      <span class="method-badge badge-post">POST</span>
+      <span class="endpoint-path">/v1/list-news</span>
+      <span class="auth-badge protected">🔒 JWT</span>
+      <span class="chevron">▶</span>
+    </div>
+    <div class="endpoint-body">
+      <div class="subsection-title">Request Body</div>
+      <div class="code-block">{ "<span class="json-key">size</span>": <span class="json-num">10</span>, "<span class="json-key">lastNum</span>": <span class="json-num">0</span> }</div>
+    </div>
+  </div>
+
+  <div class="endpoint-card" id="news-get">
+    <div class="endpoint-header" onclick="toggle(this)">
+      <span class="method-badge badge-get">GET</span>
+      <span class="endpoint-path">/v1/list-news/{id}</span>
+      <span class="auth-badge protected">🔒 JWT</span>
+      <span class="chevron">▶</span>
+    </div>
+    <div class="endpoint-body">
+      <div class="subsection-title">Path Parameters</div>
+      <table class="params-table"><tr><th>Name</th><th>Type</th><th>Description</th></tr><tr><td>id</td><td>String</td><td>News ID</td></tr></table>
+    </div>
+  </div>
+
+  <div class="endpoint-card" id="news-add">
+    <div class="endpoint-header" onclick="toggle(this)">
+      <span class="method-badge badge-post">POST</span>
+      <span class="endpoint-path">/v1/news/add &nbsp;&nbsp; /v1/news/add/manual</span>
+      <span class="auth-badge protected">🔒 JWT</span>
+      <span class="chevron">▶</span>
+    </div>
+    <div class="endpoint-body">
+      <div class="subsection-title">Request Body</div>
+      <div class="code-block">{
+  "<span class="json-key">newsTitle</span>": <span class="json-str">"Test News Title"</span>,
+  "<span class="json-key">newsType</span>": <span class="json-str">"GENERAL"</span>,
+  "<span class="json-key">newsDetails</span>": <span class="json-str">"Content here"</span>,
+  "<span class="json-key">newsStatus</span>": <span class="json-str">"ACTIVE"</span>,
+  "<span class="json-key">newsPictureFileName</span>": <span class="json-str">""</span>,
+  "<span class="json-key">newsPictureFromFile</span>": <span class="json-str">""</span>,   <span class="json-null">// base64 image</span>
+  "<span class="json-key">userMobileId</span>": <span class="json-str">"uuid"</span>,          <span class="json-null">// for /manual only</span>
+  "<span class="json-key">tokenFcm</span>": <span class="json-str">"device-token"</span>         <span class="json-null">// for /manual only</span>
+}</div>
+    </div>
+  </div>
+
+  <div class="endpoint-card" id="news-update">
+    <div class="endpoint-header" onclick="toggle(this)">
+      <span class="method-badge badge-post">POST</span>
+      <span class="endpoint-path">/v1/news/update</span>
+      <span class="auth-badge protected">🔒 JWT</span>
+      <span class="chevron">▶</span>
+    </div>
+    <div class="endpoint-body">
+      <div class="subsection-title">Request Body</div>
+      <div class="code-block">{
+  "<span class="json-key">newsId</span>": <span class="json-str">"1"</span>,
+  "<span class="json-key">newsTitle</span>": <span class="json-str">"Updated Title"</span>,
+  "<span class="json-key">newsStatus</span>": <span class="json-str">"ACTIVE"</span>
+}</div>
+    </div>
+  </div>
+
+  <div class="endpoint-card" id="news-delete">
+    <div class="endpoint-header" onclick="toggle(this)">
+      <span class="method-badge badge-post">POST</span>
+      <span class="endpoint-path">/v1/news/delete</span>
+      <span class="auth-badge protected">🔒 JWT</span>
+      <span class="chevron">▶</span>
+    </div>
+    <div class="endpoint-body">
+      <div class="subsection-title">Request Body</div>
+      <div class="code-block">{ "<span class="json-key">newsId</span>": <span class="json-str">"1"</span> }</div>
+    </div>
+  </div>
+
+  <div class="endpoint-card" id="news-preview">
+    <div class="endpoint-header" onclick="toggle(this)">
+      <span class="method-badge badge-get">GET</span>
+      <span class="endpoint-path">/v1/news/preview/{id}</span>
+      <span class="auth-badge protected">🔒 JWT</span>
+      <span class="chevron">▶</span>
+    </div>
+    <div class="endpoint-body">
+      <div class="subsection-title">Path Parameters</div>
+      <table class="params-table"><tr><th>Name</th><th>Type</th><th>Description</th></tr><tr><td>id</td><td>String</td><td>News ID</td></tr></table>
+    </div>
+  </div>
+
+  <div class="endpoint-card" id="news-noti">
+    <div class="endpoint-header" onclick="toggle(this)">
+      <span class="method-badge badge-post">POST</span>
+      <span class="endpoint-path">/v1/send-noti/news</span>
+      <span class="auth-badge public">Public</span>
+      <span class="chevron">▶</span>
+    </div>
+    <div class="endpoint-body">
+      <div class="subsection-title">Request Body</div>
+      <div class="code-block">{
+  "<span class="json-key">uid</span>": <span class="json-str">"user-uuid"</span>,
+  "<span class="json-key">device_token</span>": <span class="json-str">"fcm-device-token"</span>,
+  "<span class="json-key">title</span>": <span class="json-str">"Notification Title"</span>,
+  "<span class="json-key">body</span>": <span class="json-str">"Notification body"</span>
+}</div>
+    </div>
+  </div>
+
+  <!-- ==================== COURSE ==================== -->
+  <div class="section-heading" id="course"><h2>📚 Course</h2></div>
+
+  <div class="endpoint-card" id="course-list">
+    <div class="endpoint-header" onclick="toggle(this)">
+      <span class="method-badge badge-post">POST</span>
+      <span class="endpoint-path">/v1/list-course</span>
+      <span class="auth-badge protected">🔒 JWT</span>
+      <span class="chevron">▶</span>
+    </div>
+    <div class="endpoint-body">
+      <div class="code-block">{ "<span class="json-key">size</span>": <span class="json-num">10</span>, "<span class="json-key">lastNum</span>": <span class="json-num">0</span> }</div>
+    </div>
+  </div>
+
+  <div class="endpoint-card" id="course-get">
+    <div class="endpoint-header" onclick="toggle(this)">
+      <span class="method-badge badge-get">GET</span>
+      <span class="endpoint-path">/v1/list-course/{id}</span>
+      <span class="auth-badge protected">🔒 JWT</span>
+      <span class="chevron">▶</span>
+    </div>
+    <div class="endpoint-body">
+      <table class="params-table"><tr><th>Name</th><th>Description</th></tr><tr><td>id</td><td>Course ID</td></tr></table>
+    </div>
+  </div>
+
+  <div class="endpoint-card" id="course-add">
+    <div class="endpoint-header" onclick="toggle(this)">
+      <span class="method-badge badge-post">POST</span>
+      <span class="endpoint-path">/v1/course/add</span>
+      <span class="auth-badge protected">🔒 JWT</span>
+      <span class="chevron">▶</span>
+    </div>
+    <div class="endpoint-body">
+      <div class="code-block">{
+  "<span class="json-key">courseCode</span>": <span class="json-str">"COURSE001"</span>,
+  "<span class="json-key">courseSchoolCode</span>": <span class="json-str">"SCH001"</span>,
+  "<span class="json-key">courseType</span>": <span class="json-str">"ONLINE"</span>,
+  "<span class="json-key">courseOnlineDate</span>": <span class="json-str">"2024-01-01"</span>,
+  "<span class="json-key">courseOnsiteDate</span>": <span class="json-str">"2024-01-15"</span>,
+  "<span class="json-key">courseColour</span>": <span class="json-str">"#FF5733"</span>,
+  "<span class="json-key">courseTotalDays</span>": <span class="json-num">5</span>,
+  "<span class="json-key">coursePrice</span>": <span class="json-num">1500.00</span>,
+  "<span class="json-key">courseStatus</span>": <span class="json-str">"ACTIVE"</span>
+}</div>
+    </div>
+  </div>
+
+  <div class="endpoint-card" id="course-update">
+    <div class="endpoint-header" onclick="toggle(this)">
+      <span class="method-badge badge-post">POST</span>
+      <span class="endpoint-path">/v1/course/update</span>
+      <span class="auth-badge protected">🔒 JWT</span>
+      <span class="chevron">▶</span>
+    </div>
+    <div class="endpoint-body">
+      <div class="code-block">{ "<span class="json-key">courseId</span>": <span class="json-str">"1"</span>, "<span class="json-key">courseStatus</span>": <span class="json-str">"INACTIVE"</span> }</div>
+    </div>
+  </div>
+
+  <div class="endpoint-card" id="course-delete">
+    <div class="endpoint-header" onclick="toggle(this)">
+      <span class="method-badge badge-post">POST</span>
+      <span class="endpoint-path">/v1/course/delete</span>
+      <span class="auth-badge protected">🔒 JWT</span>
+      <span class="chevron">▶</span>
+    </div>
+    <div class="endpoint-body">
+      <div class="code-block">{ "<span class="json-key">courseId</span>": <span class="json-str">"1"</span> }</div>
+    </div>
+  </div>
+
+  <!-- ==================== DOCUMENT ==================== -->
+  <div class="section-heading" id="form"><h2>📄 Document (Form)</h2></div>
+
+  <div class="endpoint-card" id="form-list">
+    <div class="endpoint-header" onclick="toggle(this)">
+      <span class="method-badge badge-post">POST</span>
+      <span class="endpoint-path">/v1/list-form</span>
+      <span class="auth-badge protected">🔒 JWT</span>
+      <span class="chevron">▶</span>
+    </div>
+    <div class="endpoint-body">
+      <div class="code-block">{ "<span class="json-key">size</span>": <span class="json-num">10</span>, "<span class="json-key">lastNum</span>": <span class="json-num">0</span> }</div>
+    </div>
+  </div>
+
+  <div class="endpoint-card" id="form-get">
+    <div class="endpoint-header" onclick="toggle(this)">
+      <span class="method-badge badge-get">GET</span>
+      <span class="endpoint-path">/v1/list-form/{id}</span>
+      <span class="auth-badge protected">🔒 JWT</span>
+      <span class="chevron">▶</span>
+    </div>
+    <div class="endpoint-body"><table class="params-table"><tr><th>Name</th><th>Description</th></tr><tr><td>id</td><td>Form ID</td></tr></table></div>
+  </div>
+
+  <div class="endpoint-card" id="form-add">
+    <div class="endpoint-header" onclick="toggle(this)">
+      <span class="method-badge badge-post">POST</span>
+      <span class="endpoint-path">/v1/form/add</span>
+      <span class="auth-badge protected">🔒 JWT</span>
+      <span class="chevron">▶</span>
+    </div>
+    <div class="endpoint-body">
+      <div class="code-block">{
+  "<span class="json-key">formName</span>": <span class="json-str">"Test Form"</span>,
+  "<span class="json-key">formFileName</span>": <span class="json-str">"form.pdf"</span>,
+  "<span class="json-key">formFile</span>": <span class="json-str">""</span>    <span class="json-null">// base64 encoded file</span>
+}</div>
+    </div>
+  </div>
+
+  <div class="endpoint-card" id="form-update">
+    <div class="endpoint-header" onclick="toggle(this)">
+      <span class="method-badge badge-post">POST</span>
+      <span class="endpoint-path">/v1/form/update</span>
+      <span class="auth-badge protected">🔒 JWT</span>
+      <span class="chevron">▶</span>
+    </div>
+    <div class="endpoint-body">
+      <div class="code-block">{ "<span class="json-key">formId</span>": <span class="json-str">"1"</span>, "<span class="json-key">formName</span>": <span class="json-str">"Updated Name"</span> }</div>
+    </div>
+  </div>
+
+  <div class="endpoint-card" id="form-delete">
+    <div class="endpoint-header" onclick="toggle(this)">
+      <span class="method-badge badge-post">POST</span>
+      <span class="endpoint-path">/v1/form/delete</span>
+      <span class="auth-badge protected">🔒 JWT</span>
+      <span class="chevron">▶</span>
+    </div>
+    <div class="endpoint-body">
+      <div class="code-block">{ "<span class="json-key">formId</span>": <span class="json-str">"1"</span> }</div>
+    </div>
+  </div>
+
+  <div class="endpoint-card" id="form-download">
+    <div class="endpoint-header" onclick="toggle(this)">
+      <span class="method-badge badge-get">GET</span>
+      <span class="endpoint-path">/v1/from-download</span>
+      <span class="auth-badge protected">🔒 JWT</span>
+      <span class="chevron">▶</span>
+    </div>
+    <div class="endpoint-body">
+      <div class="subsection-title">Query Parameters</div>
+      <table class="params-table"><tr><th>Name</th><th>Type</th><th>Description</th></tr><tr><td>formId</td><td>String</td><td>Form ID to download</td></tr></table>
+    </div>
+  </div>
+
+  <!-- ==================== BANNER ==================== -->
+  <div class="section-heading" id="banner"><h2>🖼️ Banner</h2></div>
+
+  <div class="endpoint-card" id="banner-list">
+    <div class="endpoint-header" onclick="toggle(this)">
+      <span class="method-badge badge-post">POST</span>
+      <span class="endpoint-path">/v1/list-banner</span>
+      <span class="auth-badge protected">🔒 JWT</span>
+      <span class="chevron">▶</span>
+    </div>
+    <div class="endpoint-body">
+      <div class="code-block">{ "<span class="json-key">size</span>": <span class="json-num">10</span>, "<span class="json-key">lastNum</span>": <span class="json-num">0</span> }</div>
+    </div>
+  </div>
+
+  <div class="endpoint-card" id="banner-add">
+    <div class="endpoint-header" onclick="toggle(this)">
+      <span class="method-badge badge-post">POST</span>
+      <span class="endpoint-path">/v1/banner/add</span>
+      <span class="auth-badge protected">🔒 JWT</span>
+      <span class="chevron">▶</span>
+    </div>
+    <div class="endpoint-body">
+      <div class="code-block">{
+  "<span class="json-key">bannerName</span>": <span class="json-str">"Test Banner"</span>,
+  "<span class="json-key">bannerFileName</span>": <span class="json-str">"banner.jpg"</span>,
+  "<span class="json-key">bannerSeq</span>": <span class="json-num">1</span>,
+  "<span class="json-key">bannerFromFile</span>": <span class="json-str">""</span>    <span class="json-null">// base64 image</span>
+}</div>
+    </div>
+  </div>
+
+  <div class="endpoint-card" id="banner-delete">
+    <div class="endpoint-header" onclick="toggle(this)">
+      <span class="method-badge badge-post">POST</span>
+      <span class="endpoint-path">/v1/banner/delete</span>
+      <span class="auth-badge protected">🔒 JWT</span>
+      <span class="chevron">▶</span>
+    </div>
+    <div class="endpoint-body">
+      <div class="code-block">{ "<span class="json-key">bannerId</span>": <span class="json-str">"1"</span> }</div>
+    </div>
+  </div>
+
+  <div class="endpoint-card" id="banner-preview">
+    <div class="endpoint-header" onclick="toggle(this)">
+      <span class="method-badge badge-get">GET</span>
+      <span class="endpoint-path">/v1/banner/preview/{id}</span>
+      <span class="auth-badge protected">🔒 JWT</span>
+      <span class="chevron">▶</span>
+    </div>
+    <div class="endpoint-body">
+      <table class="params-table"><tr><th>Name</th><th>Description</th></tr><tr><td>id</td><td>Banner ID</td></tr></table>
+    </div>
+  </div>
+
+  <!-- ==================== VOUCHER ==================== -->
+  <div class="section-heading" id="voucher"><h2>🎫 Voucher</h2></div>
+
+  <div class="endpoint-card" id="voucher-list">
+    <div class="endpoint-header" onclick="toggle(this)">
+      <span class="method-badge badge-post">POST</span>
+      <span class="endpoint-path">/v1/vouchers</span>
+      <span class="auth-badge protected">🔒 JWT</span>
+      <span class="chevron">▶</span>
+    </div>
+    <div class="endpoint-body">
+      <div class="code-block">{ "<span class="json-key">size</span>": <span class="json-num">10</span>, "<span class="json-key">lastNum</span>": <span class="json-num">0</span> }</div>
+    </div>
+  </div>
+
+  <div class="endpoint-card" id="voucher-add">
+    <div class="endpoint-header" onclick="toggle(this)">
+      <span class="method-badge badge-post">POST</span>
+      <span class="endpoint-path">/v1/vouchers/add</span>
+      <span class="auth-badge protected">🔒 JWT</span>
+      <span class="chevron">▶</span>
+    </div>
+    <div class="endpoint-body">
+      <div class="code-block">{
+  "<span class="json-key">voucherTitle</span>": <span class="json-str">"Test Voucher"</span>,
+  "<span class="json-key">voucherDetails</span>": <span class="json-str">"Voucher description"</span>,
+  "<span class="json-key">voucherType</span>": <span class="json-str">"DISCOUNT"</span>,
+  "<span class="json-key">voucherSmartseamanId</span>": <span class="json-str">"SSM001"</span>,
+  "<span class="json-key">voucherPicture</span>": <span class="json-str">""</span>,
+  "<span class="json-key">voucherQrcode</span>": <span class="json-str">""</span>
+}</div>
+    </div>
+  </div>
+
+  <div class="endpoint-card" id="voucher-delete">
+    <div class="endpoint-header" onclick="toggle(this)">
+      <span class="method-badge badge-delete">DELETE</span>
+      <span class="endpoint-path">/v1/vouchers/delete</span>
+      <span class="auth-badge protected">🔒 JWT</span>
+      <span class="chevron">▶</span>
+    </div>
+    <div class="endpoint-body">
+      <div class="subsection-title">Query Parameters</div>
+      <table class="params-table"><tr><th>Name</th><th>Type</th><th>Description</th></tr><tr><td>voucherId</td><td>String</td><td>Voucher ID to delete</td></tr></table>
+    </div>
+  </div>
+
+  <div class="endpoint-card" id="voucher-get">
+    <div class="endpoint-header" onclick="toggle(this)">
+      <span class="method-badge badge-get">GET</span>
+      <span class="endpoint-path">/v1/vouchers/detail/{id}</span>
+      <span class="auth-badge protected">🔒 JWT</span>
+      <span class="chevron">▶</span>
+    </div>
+    <div class="endpoint-body">
+      <table class="params-table"><tr><th>Name</th><th>Description</th></tr><tr><td>id</td><td>Voucher ID</td></tr></table>
+    </div>
+  </div>
+
+  <!-- ==================== MOBILE USER ==================== -->
+  <div class="section-heading" id="mobile"><h2>📱 Mobile User</h2></div>
+
+  <div class="endpoint-card" id="mobile-list">
+    <div class="endpoint-header" onclick="toggle(this)">
+      <span class="method-badge badge-post">POST</span>
+      <span class="endpoint-path">/v1/user-mobile/list</span>
+      <span class="auth-badge protected">🔒 JWT</span>
+      <span class="chevron">▶</span>
+    </div>
+    <div class="endpoint-body">
+      <div class="code-block">{
+  "<span class="json-key">size</span>": <span class="json-num">10</span>,
+  "<span class="json-key">lastNum</span>": <span class="json-num">0</span>,
+  "<span class="json-key">firstName</span>": <span class="json-str">""</span>,
+  "<span class="json-key">lastName</span>": <span class="json-str">""</span>,
+  "<span class="json-key">smartSeamanId</span>": <span class="json-str">""</span>
+}</div>
+    </div>
+  </div>
+
+  <div class="endpoint-card" id="mobile-profile">
+    <div class="endpoint-header" onclick="toggle(this)">
+      <span class="method-badge badge-get">GET</span>
+      <span class="endpoint-path">/v1/user-mobile/profile &nbsp;&nbsp; /v1/user-mobile/profile/image</span>
+      <span class="auth-badge protected">🔒 JWT</span>
+      <span class="chevron">▶</span>
+    </div>
+    <div class="endpoint-body">
+      <div class="subsection-title">Query Parameters</div>
+      <table class="params-table"><tr><th>Name</th><th>Type</th><th>Description</th></tr><tr><td>mobileUUID</td><td>String</td><td>Mobile user UUID</td></tr></table>
+    </div>
+  </div>
+
+  <div class="endpoint-card" id="mobile-stats">
+    <div class="endpoint-header" onclick="toggle(this)">
+      <span class="method-badge badge-get">GET</span>
+      <span class="endpoint-path">/v1/get-all-user &nbsp;&nbsp; /v1/get-less-three &nbsp;&nbsp; /v1/get-less-six &nbsp;&nbsp; /v1/get-less-year</span>
+      <span class="auth-badge protected">🔒 JWT</span>
+      <span class="chevron">▶</span>
+    </div>
+    <div class="endpoint-body">
+      <p style="color:var(--text-muted);font-size:13px;">Dashboard statistics endpoints. No request body or params required.</p>
+      <table class="params-table" style="margin-top:10px">
+        <tr><th>Endpoint</th><th>Description</th></tr>
+        <tr><td>/get-all-user</td><td>Total registered mobile users count</td></tr>
+        <tr><td>/get-less-three</td><td>Users with cert expiring within 3 months</td></tr>
+        <tr><td>/get-less-six</td><td>Users with cert expiring within 6 months</td></tr>
+        <tr><td>/get-less-year</td><td>Users with cert expiring within 1 year</td></tr>
+      </table>
+    </div>
+  </div>
+
+  <div class="endpoint-card" id="mobile-codes">
+    <div class="endpoint-header" onclick="toggle(this)">
+      <span class="method-badge badge-get">GET</span>
+      <span class="endpoint-path">/v1/smartseaman-code-list</span>
+      <span class="auth-badge protected">🔒 JWT</span>
+      <span class="chevron">▶</span>
+    </div>
+    <div class="endpoint-body">
+      <div class="subsection-title">Query Parameters</div>
+      <table class="params-table"><tr><th>Name</th><th>Required</th><th>Description</th></tr><tr><td>search</td><td>No</td><td>Search keyword</td></tr></table>
+    </div>
+  </div>
+
+  <!-- ==================== CERTIFICATION ==================== -->
+  <div class="section-heading" id="cert"><h2>📜 Certification</h2></div>
+
+  <div class="endpoint-card" id="cert-cot">
+    <div class="endpoint-header" onclick="toggle(this)">
+      <span class="method-badge badge-post">POST</span>
+      <span class="endpoint-path">/v1/cert-type-cot</span>
+      <span class="auth-badge protected">🔒 JWT</span>
+      <span class="chevron">▶</span>
+    </div>
+    <div class="endpoint-body">
+      <div class="code-block">{
+  "<span class="json-key">size</span>": <span class="json-num">10</span>,
+  "<span class="json-key">lastNum</span>": <span class="json-num">0</span>,
+  "<span class="json-key">mobileUserUuid</span>": <span class="json-str">"uuid-here"</span>
+}</div>
+    </div>
+  </div>
+
+  <div class="endpoint-card" id="cert-doc">
+    <div class="endpoint-header" onclick="toggle(this)">
+      <span class="method-badge badge-post">POST</span>
+      <span class="endpoint-path">/v1/cert-type-document</span>
+      <span class="auth-badge protected">🔒 JWT</span>
+      <span class="chevron">▶</span>
+    </div>
+    <div class="endpoint-body">
+      <div class="code-block">{
+  "<span class="json-key">size</span>": <span class="json-num">10</span>,
+  "<span class="json-key">lastNum</span>": <span class="json-num">0</span>,
+  "<span class="json-key">mobileUserUuid</span>": <span class="json-str">"uuid-here"</span>
+}</div>
+    </div>
+  </div>
+
+  <div class="endpoint-card" id="cert-create">
+    <div class="endpoint-header" onclick="toggle(this)">
+      <span class="method-badge badge-post">POST</span>
+      <span class="endpoint-path">/v1/documents/certification/create</span>
+      <span class="auth-badge protected">🔒 JWT</span>
+      <span class="chevron">▶</span>
+    </div>
+    <div class="endpoint-body">
+      <div class="code-block">{
+  "<span class="json-key">documentCode</span>": <span class="json-str">"DOC001"</span>,        <span class="json-null">// required</span>
+  "<span class="json-key">certStartDate</span>": <span class="json-str">"2024-01-01"</span>,   <span class="json-null">// required</span>
+  "<span class="json-key">certEndDateType</span>": <span class="json-str">"DATE"</span>,        <span class="json-null">// required: DATE or LIFETIME</span>
+  "<span class="json-key">certEndDate</span>": <span class="json-str">"2025-01-01"</span>,     <span class="json-null">// required</span>
+  "<span class="json-key">fileCert</span>": <span class="json-str">""</span>,                   <span class="json-null">// base64 file content</span>
+  "<span class="json-key">fileCertName</span>": <span class="json-str">"cert.pdf"</span>,
+  "<span class="json-key">userMobileUuid</span>": <span class="json-str">"uuid-here"</span>    <span class="json-null">// required</span>
+}</div>
+    </div>
+  </div>
+
+  <div class="endpoint-card" id="cert-update">
+    <div class="endpoint-header" onclick="toggle(this)">
+      <span class="method-badge badge-post">POST</span>
+      <span class="endpoint-path">/v1/documents/certification/update</span>
+      <span class="auth-badge protected">🔒 JWT</span>
+      <span class="chevron">▶</span>
+    </div>
+    <div class="endpoint-body">
+      <div class="code-block">{
+  "<span class="json-key">isChangeFile</span>": <span class="json-str">"NO"</span>,          <span class="json-null">// required: YES or NO</span>
+  "<span class="json-key">documentCode</span>": <span class="json-str">"DOC001"</span>,
+  "<span class="json-key">certStartDate</span>": <span class="json-str">"2024-01-01"</span>,
+  "<span class="json-key">certEndDateType</span>": <span class="json-str">"DATE"</span>,
+  "<span class="json-key">certEndDate</span>": <span class="json-str">"2026-01-01"</span>,
+  "<span class="json-key">fileCert</span>": <span class="json-str">""</span>,
+  "<span class="json-key">fileCertName</span>": <span class="json-str">"cert_v2.pdf"</span>,
+  "<span class="json-key">userMobileUuid</span>": <span class="json-str">"uuid-here"</span>
+}</div>
+    </div>
+  </div>
+
+  <div class="endpoint-card" id="cert-delete">
+    <div class="endpoint-header" onclick="toggle(this)">
+      <span class="method-badge badge-delete">DELETE</span>
+      <span class="endpoint-path">/v1/documents/certification/delete</span>
+      <span class="auth-badge protected">🔒 JWT</span>
+      <span class="chevron">▶</span>
+    </div>
+    <div class="endpoint-body">
+      <div class="subsection-title">Query Parameters</div>
+      <table class="params-table">
+        <tr><th>Name</th><th>Type</th><th>Description</th></tr>
+        <tr><td>certCode</td><td>String</td><td>Certificate code</td></tr>
+        <tr><td>uUid</td><td>String</td><td>Mobile user UUID</td></tr>
+      </table>
+    </div>
+  </div>
+
+  <div class="endpoint-card" id="cert-edit">
+    <div class="endpoint-header" onclick="toggle(this)">
+      <span class="method-badge badge-get">GET</span>
+      <span class="endpoint-path">/v1/documents/certification/edit &nbsp;&nbsp; /v1/cert-user-preview</span>
+      <span class="auth-badge protected">🔒 JWT</span>
+      <span class="chevron">▶</span>
+    </div>
+    <div class="endpoint-body">
+      <div class="subsection-title">Query Parameters</div>
+      <table class="params-table">
+        <tr><th>Name</th><th>Type</th><th>Description</th></tr>
+        <tr><td>certCode</td><td>String</td><td>Certificate code</td></tr>
+        <tr><td>uUid / mobileUserUuid</td><td>String</td><td>Mobile user UUID</td></tr>
+      </table>
+    </div>
+  </div>
+
+  <!-- ==================== MENU & GROUP ==================== -->
+  <div class="section-heading" id="menu"><h2>🗂️ Menu &amp; Group</h2></div>
+
+  <div class="endpoint-card" id="menu-list">
+    <div class="endpoint-header" onclick="toggle(this)">
+      <span class="method-badge badge-post">POST</span>
+      <span class="endpoint-path">/v1/list-menu</span>
+      <span class="auth-badge protected">🔒 JWT</span>
+      <span class="chevron">▶</span>
+    </div>
+    <div class="endpoint-body">
+      <div class="code-block">{ "<span class="json-key">username</span>": <span class="json-str">"admin"</span> }</div>
+    </div>
+  </div>
+
+  <div class="endpoint-card" id="menu-auth">
+    <div class="endpoint-header" onclick="toggle(this)">
+      <span class="method-badge badge-post">POST</span>
+      <span class="endpoint-path">/v1/get-authorised</span>
+      <span class="auth-badge protected">🔒 JWT</span>
+      <span class="chevron">▶</span>
+    </div>
+    <div class="endpoint-body">
+      <div class="code-block">{
+  "<span class="json-key">groupId</span>": <span class="json-str">"1"</span>,        <span class="json-null">// required</span>
+  "<span class="json-key">menuCode</span>": <span class="json-str">"MENU001"</span>   <span class="json-null">// required</span>
+}</div>
+    </div>
+  </div>
+
+  <div class="endpoint-card" id="group-list">
+    <div class="endpoint-header" onclick="toggle(this)">
+      <span class="method-badge badge-post">POST</span>
+      <span class="endpoint-path">/v1/list-group &nbsp;&nbsp; GET /v1/list-group/{id}</span>
+      <span class="auth-badge protected">🔒 JWT</span>
+      <span class="chevron">▶</span>
+    </div>
+    <div class="endpoint-body">
+      <div class="code-block">{ "<span class="json-key">size</span>": <span class="json-num">10</span>, "<span class="json-key">lastNum</span>": <span class="json-num">0</span> }</div>
+    </div>
+  </div>
+
+  <div class="endpoint-card" id="group-add">
+    <div class="endpoint-header" onclick="toggle(this)">
+      <span class="method-badge badge-post">POST</span>
+      <span class="endpoint-path">/v1/group/add &nbsp;&nbsp; /v1/group/add-detail</span>
+      <span class="auth-badge protected">🔒 JWT</span>
+      <span class="chevron">▶</span>
+    </div>
+    <div class="endpoint-body">
+      <div class="subsection-title">/v1/group/add — Create Group</div>
+      <div class="code-block">{
+  "<span class="json-key">groupName</span>": <span class="json-str">"Administrators"</span>,
+  "<span class="json-key">groupDescription</span>": <span class="json-str">"Full access group"</span>,
+  "<span class="json-key">groupStatus</span>": <span class="json-str">"ACTIVE"</span>
+}</div>
+      <div class="subsection-title">/v1/group/add-detail — Create Group with Roles</div>
+      <div class="code-block">{
+  "<span class="json-key">groupId</span>": <span class="json-str">"1"</span>,
+  "<span class="json-key">groupName</span>": <span class="json-str">"Administrators"</span>,
+  "<span class="json-key">groupStatus</span>": <span class="json-str">"ACTIVE"</span>,
+  "<span class="json-key">groupDesc</span>": <span class="json-str">"Full access"</span>,
+  "<span class="json-key">menuAuthorlist</span>": []
+}</div>
+    </div>
+  </div>
+
+  <div class="endpoint-card" id="group-update">
+    <div class="endpoint-header" onclick="toggle(this)">
+      <span class="method-badge badge-post">POST</span>
+      <span class="endpoint-path">/v1/group/update</span>
+      <span class="auth-badge protected">🔒 JWT</span>
+      <span class="chevron">▶</span>
+    </div>
+    <div class="endpoint-body">
+      <div class="code-block">{
+  "<span class="json-key">groupId</span>": <span class="json-str">"1"</span>,
+  "<span class="json-key">groupName</span>": <span class="json-str">"Updated Admins"</span>,
+  "<span class="json-key">groupStatus</span>": <span class="json-str">"ACTIVE"</span>,
+  "<span class="json-key">groupDesc</span>": <span class="json-str">"Updated description"</span>,
+  "<span class="json-key">menuAuthorlist</span>": []
+}</div>
+    </div>
+  </div>
+
+  <div class="endpoint-card" id="group-delete">
+    <div class="endpoint-header" onclick="toggle(this)">
+      <span class="method-badge badge-post">POST</span>
+      <span class="endpoint-path">/v1/group/delete</span>
+      <span class="auth-badge protected">🔒 JWT</span>
+      <span class="chevron">▶</span>
+    </div>
+    <div class="endpoint-body">
+      <div class="code-block">{ "<span class="json-key">groupId</span>": <span class="json-str">"1"</span> }</div>
+    </div>
+  </div>
+
+  <!-- ==================== SYSTEM ==================== -->
+  <div class="section-heading" id="system"><h2>🏠 System</h2></div>
+
+  <div class="endpoint-card" id="sys-health">
+    <div class="endpoint-header" onclick="toggle(this)">
+      <span class="method-badge badge-get">GET</span>
+      <span class="endpoint-path">/actuator/health &nbsp;&nbsp; /health &nbsp;&nbsp; /</span>
+      <span class="auth-badge public">Public</span>
+      <span class="chevron">▶</span>
+    </div>
+    <div class="endpoint-body">
+      <div class="subsection-title">Response (/actuator/health)</div>
+      <div class="code-block">{ "<span class="json-key">status</span>": <span class="json-str">"UP"</span> }</div>
+    </div>
+  </div>
+
+</main>
+</div>
+
+<script>
+  function toggle(header) {
+    const card = header.closest('.endpoint-card');
+    card.classList.toggle('open');
+  }
+</script>
+</body>
+</html>

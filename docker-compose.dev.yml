@@ -1,0 +1,14 @@
+services:
+  mysql:
+    image: mysql:8.0
+    container_name: smart-seaman-mysql
+    environment:
+      MYSQL_ROOT_PASSWORD: P@ssw0rd
+      MYSQL_DATABASE: smartseaman
+    ports:
+      - "3306:3306"
+    volumes:
+      - smart-seaman-mysql-data:/var/lib/mysql
+
+volumes:
+  smart-seaman-mysql-data:

@@ -1,0 +1,1557 @@
+{
+  "info": {
+    "name": "Smart Seaman BOS API",
+    "_postman_id": "smart-seaman-bos-api-v1",
+    "description": "Back Office System REST API for Smart Seaman platform.\n\n**Required headers on every /v1/** request:**\n- `language`: TH or EN\n- `devicemodel`: client device model\n- `correlationid`: unique request trace ID\n\n**Protected endpoints** also require:\n- `Authorization`: Bearer {{token}}\n\nRun **Auth / Login** first — the test script auto-populates `{{token}}`.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:20000",
+      "type": "string",
+      "description": "Change to http://localhost:8080 for local Maven run"
+    },
+    {
+      "key": "token",
+      "value": "",
+      "type": "string",
+      "description": "JWT token — set automatically by the Login request test script"
+    }
+  ],
+  "item": [
+    {
+      "name": "🔐 Auth",
+      "item": [
+        {
+          "name": "Login",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "const res = pm.response.json();",
+                  "if (res.data && res.data.token) {",
+                  "    pm.collectionVariables.set('token', res.data.token);",
+                  "    console.log('Token saved:', res.data.token.substring(0, 20) + '...');",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {"key": "language", "value": "TH", "type": "text"},
+              {"key": "devicemodel", "value": "Postman", "type": "text"},
+              {"key": "correlationid", "value": "postman-login-001", "type": "text"},
+              {"key": "Content-Type", "value": "application/json", "type": "text"}
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"username\": \"admin\",\n  \"password\": \"P@ssw0rd\"\n}",
+              "options": {"raw": {"language": "json"}}
+            },
+            "url": {
+              "raw": "{{baseUrl}}/v1/login",
+              "host": ["{{baseUrl}}"],
+              "path": ["v1", "login"]
+            }
+          }
+        },
+        {
+          "name": "Register",
+          "request": {
+            "method": "POST",
+            "header": [
+              {"key": "language", "value": "TH", "type": "text"},
+              {"key": "devicemodel", "value": "Postman", "type": "text"},
+              {"key": "correlationid", "value": "postman-test-001", "type": "text"},
+              {"key": "Content-Type", "value": "application/json", "type": "text"}
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"firstName\": \"Test\",\n  \"lastName\": \"User\",\n  \"companyCode\": \"SSM001\",\n  \"positionCode\": \"POS001\",\n  \"email\": \"test@example.com\",\n  \"password\": \"P@ssw0rd\",\n  \"mobileNumber\": \"0812345678\"\n}",
+              "options": {"raw": {"language": "json"}}
+            },
+            "url": {
+              "raw": "{{baseUrl}}/v1/register",
+              "host": ["{{baseUrl}}"],
+              "path": ["v1", "register"]
+            }
+          }
+        },
+        {
+          "name": "Get Profile",
+          "request": {
+            "method": "GET",
+            "header": [
+              {"key": "language", "value": "TH", "type": "text"},
+              {"key": "devicemodel", "value": "Postman", "type": "text"},
+              {"key": "correlationid", "value": "postman-test-001", "type": "text"},
+              {"key": "Authorization", "value": "Bearer {{token}}", "type": "text"}
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/v1/profile",
+              "host": ["{{baseUrl}}"],
+              "path": ["v1", "profile"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "👤 Admin",
+      "item": [
+        {
+          "name": "List Admin",
+          "request": {
+            "method": "POST",
+            "header": [
+              {"key": "language", "value": "TH", "type": "text"},
+              {"key": "devicemodel", "value": "Postman", "type": "text"},
+              {"key": "correlationid", "value": "postman-test-001", "type": "text"},
+              {"key": "Authorization", "value": "Bearer {{token}}", "type": "text"},
+              {"key": "Content-Type", "value": "application/json", "type": "text"}
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"size\": 10,\n  \"lastNum\": 0\n}",
+              "options": {"raw": {"language": "json"}}
+            },
+            "url": {
+              "raw": "{{baseUrl}}/v1/list-admin",
+              "host": ["{{baseUrl}}"],
+              "path": ["v1", "list-admin"]
+            }
+          }
+        },
+        {
+          "name": "Get Admin by ID",
+          "request": {
+            "method": "GET",
+            "header": [
+              {"key": "language", "value": "TH", "type": "text"},
+              {"key": "devicemodel", "value": "Postman", "type": "text"},
+              {"key": "correlationid", "value": "postman-test-001", "type": "text"},
+              {"key": "Authorization", "value": "Bearer {{token}}", "type": "text"}
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/v1/list-admin/:id",
+              "host": ["{{baseUrl}}"],
+              "path": ["v1", "list-admin", ":id"],
+              "variable": [{"key": "id", "value": "1", "description": "Admin user ID"}]
+            }
+          }
+        },
+        {
+          "name": "Create Admin",
+          "request": {
+            "method": "POST",
+            "header": [
+              {"key": "language", "value": "TH", "type": "text"},
+              {"key": "devicemodel", "value": "Postman", "type": "text"},
+              {"key": "correlationid", "value": "postman-test-001", "type": "text"},
+              {"key": "Authorization", "value": "Bearer {{token}}", "type": "text"},
+              {"key": "Content-Type", "value": "application/json", "type": "text"}
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"username\": \"newadmin\",\n  \"password\": \"P@ssw0rd\",\n  \"firstName\": \"New\",\n  \"lastName\": \"Admin\",\n  \"email\": \"newadmin@example.com\",\n  \"mobileNumber\": \"0812345678\",\n  \"companyCode\": \"SSM001\",\n  \"positions\": \"POS001\",\n  \"groupId\": \"1\"\n}",
+              "options": {"raw": {"language": "json"}}
+            },
+            "url": {
+              "raw": "{{baseUrl}}/v1/admin/add",
+              "host": ["{{baseUrl}}"],
+              "path": ["v1", "admin", "add"]
+            }
+          }
+        },
+        {
+          "name": "Update Admin",
+          "request": {
+            "method": "POST",
+            "header": [
+              {"key": "language", "value": "TH", "type": "text"},
+              {"key": "devicemodel", "value": "Postman", "type": "text"},
+              {"key": "correlationid", "value": "postman-test-001", "type": "text"},
+              {"key": "Authorization", "value": "Bearer {{token}}", "type": "text"},
+              {"key": "Content-Type", "value": "application/json", "type": "text"}
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"adminUUID\": \"uuid-here\",\n  \"firstName\": \"Updated\",\n  \"lastName\": \"Admin\",\n  \"email\": \"updated@example.com\",\n  \"mobileNumber\": \"0812345678\",\n  \"userStatus\": \"ACTIVE\"\n}",
+              "options": {"raw": {"language": "json"}}
+            },
+            "url": {
+              "raw": "{{baseUrl}}/v1/admin/update",
+              "host": ["{{baseUrl}}"],
+              "path": ["v1", "admin", "update"]
+            }
+          }
+        },
+        {
+          "name": "Delete Admin",
+          "request": {
+            "method": "POST",
+            "header": [
+              {"key": "language", "value": "TH", "type": "text"},
+              {"key": "devicemodel", "value": "Postman", "type": "text"},
+              {"key": "correlationid", "value": "postman-test-001", "type": "text"},
+              {"key": "Authorization", "value": "Bearer {{token}}", "type": "text"},
+              {"key": "Content-Type", "value": "application/json", "type": "text"}
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"adminUUID\": \"uuid-here\"\n}",
+              "options": {"raw": {"language": "json"}}
+            },
+            "url": {
+              "raw": "{{baseUrl}}/v1/admin/delete",
+              "host": ["{{baseUrl}}"],
+              "path": ["v1", "admin", "delete"]
+            }
+          }
+        },
+        {
+          "name": "Get Profile Picture",
+          "request": {
+            "method": "GET",
+            "header": [
+              {"key": "language", "value": "TH", "type": "text"},
+              {"key": "devicemodel", "value": "Postman", "type": "text"},
+              {"key": "correlationid", "value": "postman-test-001", "type": "text"},
+              {"key": "Authorization", "value": "Bearer {{token}}", "type": "text"}
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/v1/profile/pic",
+              "host": ["{{baseUrl}}"],
+              "path": ["v1", "profile", "pic"]
+            }
+          }
+        },
+        {
+          "name": "Update Password",
+          "request": {
+            "method": "POST",
+            "header": [
+              {"key": "language", "value": "TH", "type": "text"},
+              {"key": "devicemodel", "value": "Postman", "type": "text"},
+              {"key": "correlationid", "value": "postman-test-001", "type": "text"},
+              {"key": "Authorization", "value": "Bearer {{token}}", "type": "text"},
+              {"key": "Content-Type", "value": "application/json", "type": "text"}
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"adminId\": \"1\",\n  \"oldPassword\": \"P@ssw0rd\",\n  \"newPassword\": \"NewP@ss1\",\n  \"confirmPassword\": \"NewP@ss1\"\n}",
+              "options": {"raw": {"language": "json"}}
+            },
+            "url": {
+              "raw": "{{baseUrl}}/v1/admin/update-password",
+              "host": ["{{baseUrl}}"],
+              "path": ["v1", "admin", "update-password"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "📋 Master Data (Public)",
+      "item": [
+        {
+          "name": "Get Master Data",
+          "request": {
+            "method": "GET",
+            "header": [
+              {"key": "language", "value": "TH", "type": "text"},
+              {"key": "devicemodel", "value": "Postman", "type": "text"},
+              {"key": "correlationid", "value": "postman-test-001", "type": "text"}
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/v1/master",
+              "host": ["{{baseUrl}}"],
+              "path": ["v1", "master"]
+            }
+          }
+        },
+        {
+          "name": "Master - Schools",
+          "request": {
+            "method": "GET",
+            "header": [
+              {"key": "language", "value": "TH", "type": "text"},
+              {"key": "devicemodel", "value": "Postman", "type": "text"},
+              {"key": "correlationid", "value": "postman-test-001", "type": "text"}
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/v1/master/schools",
+              "host": ["{{baseUrl}}"],
+              "path": ["v1", "master", "schools"]
+            }
+          }
+        },
+        {
+          "name": "Master - Companies",
+          "request": {
+            "method": "GET",
+            "header": [
+              {"key": "language", "value": "TH", "type": "text"},
+              {"key": "devicemodel", "value": "Postman", "type": "text"},
+              {"key": "correlationid", "value": "postman-test-001", "type": "text"}
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/v1/master/companys",
+              "host": ["{{baseUrl}}"],
+              "path": ["v1", "master", "companys"]
+            }
+          }
+        },
+        {
+          "name": "Master - Company",
+          "request": {
+            "method": "GET",
+            "header": [
+              {"key": "language", "value": "TH", "type": "text"},
+              {"key": "devicemodel", "value": "Postman", "type": "text"},
+              {"key": "correlationid", "value": "postman-test-001", "type": "text"}
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/v1/master/company",
+              "host": ["{{baseUrl}}"],
+              "path": ["v1", "master", "company"]
+            }
+          }
+        },
+        {
+          "name": "Master - Course Names",
+          "request": {
+            "method": "GET",
+            "header": [
+              {"key": "language", "value": "TH", "type": "text"},
+              {"key": "devicemodel", "value": "Postman", "type": "text"},
+              {"key": "correlationid", "value": "postman-test-001", "type": "text"}
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/v1/master/course-name",
+              "host": ["{{baseUrl}}"],
+              "path": ["v1", "master", "course-name"]
+            }
+          }
+        },
+        {
+          "name": "Master - Group Names",
+          "request": {
+            "method": "GET",
+            "header": [
+              {"key": "language", "value": "TH", "type": "text"},
+              {"key": "devicemodel", "value": "Postman", "type": "text"},
+              {"key": "correlationid", "value": "postman-test-001", "type": "text"}
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/v1/master/group-name",
+              "host": ["{{baseUrl}}"],
+              "path": ["v1", "master", "group-name"]
+            }
+          }
+        },
+        {
+          "name": "Master - Menu",
+          "request": {
+            "method": "GET",
+            "header": [
+              {"key": "language", "value": "TH", "type": "text"},
+              {"key": "devicemodel", "value": "Postman", "type": "text"},
+              {"key": "correlationid", "value": "postman-test-001", "type": "text"}
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/v1/master/menu",
+              "host": ["{{baseUrl}}"],
+              "path": ["v1", "master", "menu"]
+            }
+          }
+        },
+        {
+          "name": "Master - Documents",
+          "request": {
+            "method": "GET",
+            "header": [
+              {"key": "language", "value": "TH", "type": "text"},
+              {"key": "devicemodel", "value": "Postman", "type": "text"},
+              {"key": "correlationid", "value": "postman-test-001", "type": "text"}
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/v1/master/documents",
+              "host": ["{{baseUrl}}"],
+              "path": ["v1", "master", "documents"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "📰 News",
+      "item": [
+        {
+          "name": "List News",
+          "request": {
+            "method": "POST",
+            "header": [
+              {"key": "language", "value": "TH", "type": "text"},
+              {"key": "devicemodel", "value": "Postman", "type": "text"},
+              {"key": "correlationid", "value": "postman-test-001", "type": "text"},
+              {"key": "Authorization", "value": "Bearer {{token}}", "type": "text"},
+              {"key": "Content-Type", "value": "application/json", "type": "text"}
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"size\": 10,\n  \"lastNum\": 0\n}",
+              "options": {"raw": {"language": "json"}}
+            },
+            "url": {
+              "raw": "{{baseUrl}}/v1/list-news",
+              "host": ["{{baseUrl}}"],
+              "path": ["v1", "list-news"]
+            }
+          }
+        },
+        {
+          "name": "Get News by ID",
+          "request": {
+            "method": "GET",
+            "header": [
+              {"key": "language", "value": "TH", "type": "text"},
+              {"key": "devicemodel", "value": "Postman", "type": "text"},
+              {"key": "correlationid", "value": "postman-test-001", "type": "text"},
+              {"key": "Authorization", "value": "Bearer {{token}}", "type": "text"}
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/v1/list-news/:id",
+              "host": ["{{baseUrl}}"],
+              "path": ["v1", "list-news", ":id"],
+              "variable": [{"key": "id", "value": "1", "description": "News ID"}]
+            }
+          }
+        },
+        {
+          "name": "Create News",
+          "request": {
+            "method": "POST",
+            "header": [
+              {"key": "language", "value": "TH", "type": "text"},
+              {"key": "devicemodel", "value": "Postman", "type": "text"},
+              {"key": "correlationid", "value": "postman-test-001", "type": "text"},
+              {"key": "Authorization", "value": "Bearer {{token}}", "type": "text"},
+              {"key": "Content-Type", "value": "application/json", "type": "text"}
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"newsTitle\": \"Test News Title\",\n  \"newsType\": \"GENERAL\",\n  \"newsDetails\": \"News content goes here.\",\n  \"newsStatus\": \"ACTIVE\",\n  \"newsPictureFileName\": \"\",\n  \"newsPictureFromFile\": \"\"\n}",
+              "options": {"raw": {"language": "json"}}
+            },
+            "url": {
+              "raw": "{{baseUrl}}/v1/news/add",
+              "host": ["{{baseUrl}}"],
+              "path": ["v1", "news", "add"]
+            }
+          }
+        },
+        {
+          "name": "Create News (Manual)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {"key": "language", "value": "TH", "type": "text"},
+              {"key": "devicemodel", "value": "Postman", "type": "text"},
+              {"key": "correlationid", "value": "postman-test-001", "type": "text"},
+              {"key": "Authorization", "value": "Bearer {{token}}", "type": "text"},
+              {"key": "Content-Type", "value": "application/json", "type": "text"}
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"newsTitle\": \"Manual News\",\n  \"newsType\": \"GENERAL\",\n  \"newsDetails\": \"Manual content.\",\n  \"newsStatus\": \"ACTIVE\",\n  \"userMobileId\": \"uuid-here\",\n  \"tokenFcm\": \"device-fcm-token\"\n}",
+              "options": {"raw": {"language": "json"}}
+            },
+            "url": {
+              "raw": "{{baseUrl}}/v1/news/add/manual",
+              "host": ["{{baseUrl}}"],
+              "path": ["v1", "news", "add", "manual"]
+            }
+          }
+        },
+        {
+          "name": "Update News",
+          "request": {
+            "method": "POST",
+            "header": [
+              {"key": "language", "value": "TH", "type": "text"},
+              {"key": "devicemodel", "value": "Postman", "type": "text"},
+              {"key": "correlationid", "value": "postman-test-001", "type": "text"},
+              {"key": "Authorization", "value": "Bearer {{token}}", "type": "text"},
+              {"key": "Content-Type", "value": "application/json", "type": "text"}
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"newsId\": \"1\",\n  \"newsTitle\": \"Updated News Title\",\n  \"newsType\": \"GENERAL\",\n  \"newsDetails\": \"Updated content.\",\n  \"newsStatus\": \"ACTIVE\"\n}",
+              "options": {"raw": {"language": "json"}}
+            },
+            "url": {
+              "raw": "{{baseUrl}}/v1/news/update",
+              "host": ["{{baseUrl}}"],
+              "path": ["v1", "news", "update"]
+            }
+          }
+        },
+        {
+          "name": "Delete News",
+          "request": {
+            "method": "POST",
+            "header": [
+              {"key": "language", "value": "TH", "type": "text"},
+              {"key": "devicemodel", "value": "Postman", "type": "text"},
+              {"key": "correlationid", "value": "postman-test-001", "type": "text"},
+              {"key": "Authorization", "value": "Bearer {{token}}", "type": "text"},
+              {"key": "Content-Type", "value": "application/json", "type": "text"}
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"newsId\": \"1\"\n}",
+              "options": {"raw": {"language": "json"}}
+            },
+            "url": {
+              "raw": "{{baseUrl}}/v1/news/delete",
+              "host": ["{{baseUrl}}"],
+              "path": ["v1", "news", "delete"]
+            }
+          }
+        },
+        {
+          "name": "Preview News",
+          "request": {
+            "method": "GET",
+            "header": [
+              {"key": "language", "value": "TH", "type": "text"},
+              {"key": "devicemodel", "value": "Postman", "type": "text"},
+              {"key": "correlationid", "value": "postman-test-001", "type": "text"},
+              {"key": "Authorization", "value": "Bearer {{token}}", "type": "text"}
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/v1/news/preview/:id",
+              "host": ["{{baseUrl}}"],
+              "path": ["v1", "news", "preview", ":id"],
+              "variable": [{"key": "id", "value": "1", "description": "News ID"}]
+            }
+          }
+        },
+        {
+          "name": "Send Notification (News) [Public]",
+          "request": {
+            "method": "POST",
+            "header": [
+              {"key": "language", "value": "TH", "type": "text"},
+              {"key": "devicemodel", "value": "Postman", "type": "text"},
+              {"key": "correlationid", "value": "postman-test-001", "type": "text"},
+              {"key": "Content-Type", "value": "application/json", "type": "text"}
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"uid\": \"user-uuid\",\n  \"device_token\": \"fcm-device-token\",\n  \"title\": \"Notification Title\",\n  \"body\": \"Notification body message\"\n}",
+              "options": {"raw": {"language": "json"}}
+            },
+            "url": {
+              "raw": "{{baseUrl}}/v1/send-noti/news",
+              "host": ["{{baseUrl}}"],
+              "path": ["v1", "send-noti", "news"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "📚 Course",
+      "item": [
+        {
+          "name": "List Courses",
+          "request": {
+            "method": "POST",
+            "header": [
+              {"key": "language", "value": "TH", "type": "text"},
+              {"key": "devicemodel", "value": "Postman", "type": "text"},
+              {"key": "correlationid", "value": "postman-test-001", "type": "text"},
+              {"key": "Authorization", "value": "Bearer {{token}}", "type": "text"},
+              {"key": "Content-Type", "value": "application/json", "type": "text"}
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"size\": 10,\n  \"lastNum\": 0\n}",
+              "options": {"raw": {"language": "json"}}
+            },
+            "url": {
+              "raw": "{{baseUrl}}/v1/list-course",
+              "host": ["{{baseUrl}}"],
+              "path": ["v1", "list-course"]
+            }
+          }
+        },
+        {
+          "name": "Get Course by ID",
+          "request": {
+            "method": "GET",
+            "header": [
+              {"key": "language", "value": "TH", "type": "text"},
+              {"key": "devicemodel", "value": "Postman", "type": "text"},
+              {"key": "correlationid", "value": "postman-test-001", "type": "text"},
+              {"key": "Authorization", "value": "Bearer {{token}}", "type": "text"}
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/v1/list-course/:id",
+              "host": ["{{baseUrl}}"],
+              "path": ["v1", "list-course", ":id"],
+              "variable": [{"key": "id", "value": "1", "description": "Course ID"}]
+            }
+          }
+        },
+        {
+          "name": "Create Course",
+          "request": {
+            "method": "POST",
+            "header": [
+              {"key": "language", "value": "TH", "type": "text"},
+              {"key": "devicemodel", "value": "Postman", "type": "text"},
+              {"key": "correlationid", "value": "postman-test-001", "type": "text"},
+              {"key": "Authorization", "value": "Bearer {{token}}", "type": "text"},
+              {"key": "Content-Type", "value": "application/json", "type": "text"}
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"courseCode\": \"COURSE001\",\n  \"courseSchoolCode\": \"SCH001\",\n  \"courseType\": \"ONLINE\",\n  \"courseOnlineDate\": \"2024-01-01\",\n  \"courseOnsiteDate\": \"2024-01-15\",\n  \"courseColour\": \"#FF5733\",\n  \"courseTotalDays\": 5,\n  \"coursePrice\": 1500.00,\n  \"courseStatus\": \"ACTIVE\"\n}",
+              "options": {"raw": {"language": "json"}}
+            },
+            "url": {
+              "raw": "{{baseUrl}}/v1/course/add",
+              "host": ["{{baseUrl}}"],
+              "path": ["v1", "course", "add"]
+            }
+          }
+        },
+        {
+          "name": "Update Course",
+          "request": {
+            "method": "POST",
+            "header": [
+              {"key": "language", "value": "TH", "type": "text"},
+              {"key": "devicemodel", "value": "Postman", "type": "text"},
+              {"key": "correlationid", "value": "postman-test-001", "type": "text"},
+              {"key": "Authorization", "value": "Bearer {{token}}", "type": "text"},
+              {"key": "Content-Type", "value": "application/json", "type": "text"}
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"courseId\": \"1\",\n  \"courseCode\": \"COURSE001\",\n  \"courseStatus\": \"INACTIVE\",\n  \"coursePrice\": 2000.00\n}",
+              "options": {"raw": {"language": "json"}}
+            },
+            "url": {
+              "raw": "{{baseUrl}}/v1/course/update",
+              "host": ["{{baseUrl}}"],
+              "path": ["v1", "course", "update"]
+            }
+          }
+        },
+        {
+          "name": "Delete Course",
+          "request": {
+            "method": "POST",
+            "header": [
+              {"key": "language", "value": "TH", "type": "text"},
+              {"key": "devicemodel", "value": "Postman", "type": "text"},
+              {"key": "correlationid", "value": "postman-test-001", "type": "text"},
+              {"key": "Authorization", "value": "Bearer {{token}}", "type": "text"},
+              {"key": "Content-Type", "value": "application/json", "type": "text"}
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"courseId\": \"1\"\n}",
+              "options": {"raw": {"language": "json"}}
+            },
+            "url": {
+              "raw": "{{baseUrl}}/v1/course/delete",
+              "host": ["{{baseUrl}}"],
+              "path": ["v1", "course", "delete"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "📄 Document (Form)",
+      "item": [
+        {
+          "name": "List Forms",
+          "request": {
+            "method": "POST",
+            "header": [
+              {"key": "language", "value": "TH", "type": "text"},
+              {"key": "devicemodel", "value": "Postman", "type": "text"},
+              {"key": "correlationid", "value": "postman-test-001", "type": "text"},
+              {"key": "Authorization", "value": "Bearer {{token}}", "type": "text"},
+              {"key": "Content-Type", "value": "application/json", "type": "text"}
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"size\": 10,\n  \"lastNum\": 0\n}",
+              "options": {"raw": {"language": "json"}}
+            },
+            "url": {
+              "raw": "{{baseUrl}}/v1/list-form",
+              "host": ["{{baseUrl}}"],
+              "path": ["v1", "list-form"]
+            }
+          }
+        },
+        {
+          "name": "Get Form by ID",
+          "request": {
+            "method": "GET",
+            "header": [
+              {"key": "language", "value": "TH", "type": "text"},
+              {"key": "devicemodel", "value": "Postman", "type": "text"},
+              {"key": "correlationid", "value": "postman-test-001", "type": "text"},
+              {"key": "Authorization", "value": "Bearer {{token}}", "type": "text"}
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/v1/list-form/:id",
+              "host": ["{{baseUrl}}"],
+              "path": ["v1", "list-form", ":id"],
+              "variable": [{"key": "id", "value": "1", "description": "Form ID"}]
+            }
+          }
+        },
+        {
+          "name": "Create Form",
+          "request": {
+            "method": "POST",
+            "header": [
+              {"key": "language", "value": "TH", "type": "text"},
+              {"key": "devicemodel", "value": "Postman", "type": "text"},
+              {"key": "correlationid", "value": "postman-test-001", "type": "text"},
+              {"key": "Authorization", "value": "Bearer {{token}}", "type": "text"},
+              {"key": "Content-Type", "value": "application/json", "type": "text"}
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"formName\": \"Test Form\",\n  \"formFileName\": \"form.pdf\",\n  \"formFile\": \"\"\n}",
+              "options": {"raw": {"language": "json"}}
+            },
+            "url": {
+              "raw": "{{baseUrl}}/v1/form/add",
+              "host": ["{{baseUrl}}"],
+              "path": ["v1", "form", "add"]
+            }
+          }
+        },
+        {
+          "name": "Update Form",
+          "request": {
+            "method": "POST",
+            "header": [
+              {"key": "language", "value": "TH", "type": "text"},
+              {"key": "devicemodel", "value": "Postman", "type": "text"},
+              {"key": "correlationid", "value": "postman-test-001", "type": "text"},
+              {"key": "Authorization", "value": "Bearer {{token}}", "type": "text"},
+              {"key": "Content-Type", "value": "application/json", "type": "text"}
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"formId\": \"1\",\n  \"formName\": \"Updated Form\"\n}",
+              "options": {"raw": {"language": "json"}}
+            },
+            "url": {
+              "raw": "{{baseUrl}}/v1/form/update",
+              "host": ["{{baseUrl}}"],
+              "path": ["v1", "form", "update"]
+            }
+          }
+        },
+        {
+          "name": "Delete Form",
+          "request": {
+            "method": "POST",
+            "header": [
+              {"key": "language", "value": "TH", "type": "text"},
+              {"key": "devicemodel", "value": "Postman", "type": "text"},
+              {"key": "correlationid", "value": "postman-test-001", "type": "text"},
+              {"key": "Authorization", "value": "Bearer {{token}}", "type": "text"},
+              {"key": "Content-Type", "value": "application/json", "type": "text"}
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"formId\": \"1\"\n}",
+              "options": {"raw": {"language": "json"}}
+            },
+            "url": {
+              "raw": "{{baseUrl}}/v1/form/delete",
+              "host": ["{{baseUrl}}"],
+              "path": ["v1", "form", "delete"]
+            }
+          }
+        },
+        {
+          "name": "Download Form",
+          "request": {
+            "method": "GET",
+            "header": [
+              {"key": "language", "value": "TH", "type": "text"},
+              {"key": "devicemodel", "value": "Postman", "type": "text"},
+              {"key": "correlationid", "value": "postman-test-001", "type": "text"},
+              {"key": "Authorization", "value": "Bearer {{token}}", "type": "text"}
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/v1/from-download?formId=",
+              "host": ["{{baseUrl}}"],
+              "path": ["v1", "from-download"],
+              "query": [{"key": "formId", "value": "", "description": "Form ID to download"}]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "🖼️ Banner",
+      "item": [
+        {
+          "name": "List Banners",
+          "request": {
+            "method": "POST",
+            "header": [
+              {"key": "language", "value": "TH", "type": "text"},
+              {"key": "devicemodel", "value": "Postman", "type": "text"},
+              {"key": "correlationid", "value": "postman-test-001", "type": "text"},
+              {"key": "Authorization", "value": "Bearer {{token}}", "type": "text"},
+              {"key": "Content-Type", "value": "application/json", "type": "text"}
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"size\": 10,\n  \"lastNum\": 0\n}",
+              "options": {"raw": {"language": "json"}}
+            },
+            "url": {
+              "raw": "{{baseUrl}}/v1/list-banner",
+              "host": ["{{baseUrl}}"],
+              "path": ["v1", "list-banner"]
+            }
+          }
+        },
+        {
+          "name": "Create Banner",
+          "request": {
+            "method": "POST",
+            "header": [
+              {"key": "language", "value": "TH", "type": "text"},
+              {"key": "devicemodel", "value": "Postman", "type": "text"},
+              {"key": "correlationid", "value": "postman-test-001", "type": "text"},
+              {"key": "Authorization", "value": "Bearer {{token}}", "type": "text"},
+              {"key": "Content-Type", "value": "application/json", "type": "text"}
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"bannerName\": \"Test Banner\",\n  \"bannerFileName\": \"banner.jpg\",\n  \"bannerSeq\": 1,\n  \"bannerFromFile\": \"\"\n}",
+              "options": {"raw": {"language": "json"}}
+            },
+            "url": {
+              "raw": "{{baseUrl}}/v1/banner/add",
+              "host": ["{{baseUrl}}"],
+              "path": ["v1", "banner", "add"]
+            }
+          }
+        },
+        {
+          "name": "Delete Banner",
+          "request": {
+            "method": "POST",
+            "header": [
+              {"key": "language", "value": "TH", "type": "text"},
+              {"key": "devicemodel", "value": "Postman", "type": "text"},
+              {"key": "correlationid", "value": "postman-test-001", "type": "text"},
+              {"key": "Authorization", "value": "Bearer {{token}}", "type": "text"},
+              {"key": "Content-Type", "value": "application/json", "type": "text"}
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"bannerId\": \"1\"\n}",
+              "options": {"raw": {"language": "json"}}
+            },
+            "url": {
+              "raw": "{{baseUrl}}/v1/banner/delete",
+              "host": ["{{baseUrl}}"],
+              "path": ["v1", "banner", "delete"]
+            }
+          }
+        },
+        {
+          "name": "Preview Banner",
+          "request": {
+            "method": "GET",
+            "header": [
+              {"key": "language", "value": "TH", "type": "text"},
+              {"key": "devicemodel", "value": "Postman", "type": "text"},
+              {"key": "correlationid", "value": "postman-test-001", "type": "text"},
+              {"key": "Authorization", "value": "Bearer {{token}}", "type": "text"}
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/v1/banner/preview/:id",
+              "host": ["{{baseUrl}}"],
+              "path": ["v1", "banner", "preview", ":id"],
+              "variable": [{"key": "id", "value": "1", "description": "Banner ID"}]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "🎫 Voucher",
+      "item": [
+        {
+          "name": "List Vouchers",
+          "request": {
+            "method": "POST",
+            "header": [
+              {"key": "language", "value": "TH", "type": "text"},
+              {"key": "devicemodel", "value": "Postman", "type": "text"},
+              {"key": "correlationid", "value": "postman-test-001", "type": "text"},
+              {"key": "Authorization", "value": "Bearer {{token}}", "type": "text"},
+              {"key": "Content-Type", "value": "application/json", "type": "text"}
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"size\": 10,\n  \"lastNum\": 0\n}",
+              "options": {"raw": {"language": "json"}}
+            },
+            "url": {
+              "raw": "{{baseUrl}}/v1/vouchers",
+              "host": ["{{baseUrl}}"],
+              "path": ["v1", "vouchers"]
+            }
+          }
+        },
+        {
+          "name": "Create Voucher",
+          "request": {
+            "method": "POST",
+            "header": [
+              {"key": "language", "value": "TH", "type": "text"},
+              {"key": "devicemodel", "value": "Postman", "type": "text"},
+              {"key": "correlationid", "value": "postman-test-001", "type": "text"},
+              {"key": "Authorization", "value": "Bearer {{token}}", "type": "text"},
+              {"key": "Content-Type", "value": "application/json", "type": "text"}
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"voucherTitle\": \"Test Voucher\",\n  \"voucherDetails\": \"Voucher description\",\n  \"voucherType\": \"DISCOUNT\",\n  \"voucherSmartseamanId\": \"SSM001\",\n  \"voucherPicture\": \"\",\n  \"voucherQrcode\": \"\"\n}",
+              "options": {"raw": {"language": "json"}}
+            },
+            "url": {
+              "raw": "{{baseUrl}}/v1/vouchers/add",
+              "host": ["{{baseUrl}}"],
+              "path": ["v1", "vouchers", "add"]
+            }
+          }
+        },
+        {
+          "name": "Delete Voucher",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {"key": "language", "value": "TH", "type": "text"},
+              {"key": "devicemodel", "value": "Postman", "type": "text"},
+              {"key": "correlationid", "value": "postman-test-001", "type": "text"},
+              {"key": "Authorization", "value": "Bearer {{token}}", "type": "text"}
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/v1/vouchers/delete?voucherId=",
+              "host": ["{{baseUrl}}"],
+              "path": ["v1", "vouchers", "delete"],
+              "query": [{"key": "voucherId", "value": "", "description": "Voucher ID to delete"}]
+            }
+          }
+        },
+        {
+          "name": "Get Voucher by ID",
+          "request": {
+            "method": "GET",
+            "header": [
+              {"key": "language", "value": "TH", "type": "text"},
+              {"key": "devicemodel", "value": "Postman", "type": "text"},
+              {"key": "correlationid", "value": "postman-test-001", "type": "text"},
+              {"key": "Authorization", "value": "Bearer {{token}}", "type": "text"}
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/v1/vouchers/detail/:id",
+              "host": ["{{baseUrl}}"],
+              "path": ["v1", "vouchers", "detail", ":id"],
+              "variable": [{"key": "id", "value": "1", "description": "Voucher ID"}]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "📱 Mobile User",
+      "item": [
+        {
+          "name": "List Mobile Users",
+          "request": {
+            "method": "POST",
+            "header": [
+              {"key": "language", "value": "TH", "type": "text"},
+              {"key": "devicemodel", "value": "Postman", "type": "text"},
+              {"key": "correlationid", "value": "postman-test-001", "type": "text"},
+              {"key": "Authorization", "value": "Bearer {{token}}", "type": "text"},
+              {"key": "Content-Type", "value": "application/json", "type": "text"}
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"size\": 10,\n  \"lastNum\": 0,\n  \"firstName\": \"\",\n  \"lastName\": \"\",\n  \"smartSeamanId\": \"\"\n}",
+              "options": {"raw": {"language": "json"}}
+            },
+            "url": {
+              "raw": "{{baseUrl}}/v1/user-mobile/list",
+              "host": ["{{baseUrl}}"],
+              "path": ["v1", "user-mobile", "list"]
+            }
+          }
+        },
+        {
+          "name": "Get Mobile User Profile",
+          "request": {
+            "method": "GET",
+            "header": [
+              {"key": "language", "value": "TH", "type": "text"},
+              {"key": "devicemodel", "value": "Postman", "type": "text"},
+              {"key": "correlationid", "value": "postman-test-001", "type": "text"},
+              {"key": "Authorization", "value": "Bearer {{token}}", "type": "text"}
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/v1/user-mobile/profile?mobileUUID=",
+              "host": ["{{baseUrl}}"],
+              "path": ["v1", "user-mobile", "profile"],
+              "query": [{"key": "mobileUUID", "value": "", "description": "Mobile user UUID"}]
+            }
+          }
+        },
+        {
+          "name": "Get Mobile User Profile Image",
+          "request": {
+            "method": "GET",
+            "header": [
+              {"key": "language", "value": "TH", "type": "text"},
+              {"key": "devicemodel", "value": "Postman", "type": "text"},
+              {"key": "correlationid", "value": "postman-test-001", "type": "text"},
+              {"key": "Authorization", "value": "Bearer {{token}}", "type": "text"}
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/v1/user-mobile/profile/image?mobileUUID=",
+              "host": ["{{baseUrl}}"],
+              "path": ["v1", "user-mobile", "profile", "image"],
+              "query": [{"key": "mobileUUID", "value": "", "description": "Mobile user UUID"}]
+            }
+          }
+        },
+        {
+          "name": "Count All Users",
+          "request": {
+            "method": "GET",
+            "header": [
+              {"key": "language", "value": "TH", "type": "text"},
+              {"key": "devicemodel", "value": "Postman", "type": "text"},
+              {"key": "correlationid", "value": "postman-test-001", "type": "text"},
+              {"key": "Authorization", "value": "Bearer {{token}}", "type": "text"}
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/v1/get-all-user",
+              "host": ["{{baseUrl}}"],
+              "path": ["v1", "get-all-user"]
+            }
+          }
+        },
+        {
+          "name": "Cert Expiring < 3 Months",
+          "request": {
+            "method": "GET",
+            "header": [
+              {"key": "language", "value": "TH", "type": "text"},
+              {"key": "devicemodel", "value": "Postman", "type": "text"},
+              {"key": "correlationid", "value": "postman-test-001", "type": "text"},
+              {"key": "Authorization", "value": "Bearer {{token}}", "type": "text"}
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/v1/get-less-three",
+              "host": ["{{baseUrl}}"],
+              "path": ["v1", "get-less-three"]
+            }
+          }
+        },
+        {
+          "name": "Cert Expiring < 6 Months",
+          "request": {
+            "method": "GET",
+            "header": [
+              {"key": "language", "value": "TH", "type": "text"},
+              {"key": "devicemodel", "value": "Postman", "type": "text"},
+              {"key": "correlationid", "value": "postman-test-001", "type": "text"},
+              {"key": "Authorization", "value": "Bearer {{token}}", "type": "text"}
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/v1/get-less-six",
+              "host": ["{{baseUrl}}"],
+              "path": ["v1", "get-less-six"]
+            }
+          }
+        },
+        {
+          "name": "Cert Expiring < 1 Year",
+          "request": {
+            "method": "GET",
+            "header": [
+              {"key": "language", "value": "TH", "type": "text"},
+              {"key": "devicemodel", "value": "Postman", "type": "text"},
+              {"key": "correlationid", "value": "postman-test-001", "type": "text"},
+              {"key": "Authorization", "value": "Bearer {{token}}", "type": "text"}
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/v1/get-less-year",
+              "host": ["{{baseUrl}}"],
+              "path": ["v1", "get-less-year"]
+            }
+          }
+        },
+        {
+          "name": "List SmartSeaman Codes",
+          "request": {
+            "method": "GET",
+            "header": [
+              {"key": "language", "value": "TH", "type": "text"},
+              {"key": "devicemodel", "value": "Postman", "type": "text"},
+              {"key": "correlationid", "value": "postman-test-001", "type": "text"},
+              {"key": "Authorization", "value": "Bearer {{token}}", "type": "text"}
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/v1/smartseaman-code-list?search=",
+              "host": ["{{baseUrl}}"],
+              "path": ["v1", "smartseaman-code-list"],
+              "query": [{"key": "search", "value": "", "description": "Optional search keyword"}]
+            }
+          }
+        },
+        {
+          "name": "List Mobile User by ID (Dashboard)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {"key": "language", "value": "TH", "type": "text"},
+              {"key": "devicemodel", "value": "Postman", "type": "text"},
+              {"key": "correlationid", "value": "postman-test-001", "type": "text"},
+              {"key": "Authorization", "value": "Bearer {{token}}", "type": "text"},
+              {"key": "Content-Type", "value": "application/json", "type": "text"}
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"size\": 10,\n  \"lastNum\": 0\n}",
+              "options": {"raw": {"language": "json"}}
+            },
+            "url": {
+              "raw": "{{baseUrl}}/v1/list-mobile-user/:id",
+              "host": ["{{baseUrl}}"],
+              "path": ["v1", "list-mobile-user", ":id"],
+              "variable": [{"key": "id", "value": "1", "description": "Mobile user ID"}]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "📜 Certification",
+      "item": [
+        {
+          "name": "List COT Certifications",
+          "request": {
+            "method": "POST",
+            "header": [
+              {"key": "language", "value": "TH", "type": "text"},
+              {"key": "devicemodel", "value": "Postman", "type": "text"},
+              {"key": "correlationid", "value": "postman-test-001", "type": "text"},
+              {"key": "Authorization", "value": "Bearer {{token}}", "type": "text"},
+              {"key": "Content-Type", "value": "application/json", "type": "text"}
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"size\": 10,\n  \"lastNum\": 0,\n  \"mobileUserUuid\": \"uuid-here\"\n}",
+              "options": {"raw": {"language": "json"}}
+            },
+            "url": {
+              "raw": "{{baseUrl}}/v1/cert-type-cot",
+              "host": ["{{baseUrl}}"],
+              "path": ["v1", "cert-type-cot"]
+            }
+          }
+        },
+        {
+          "name": "List Document Certifications",
+          "request": {
+            "method": "POST",
+            "header": [
+              {"key": "language", "value": "TH", "type": "text"},
+              {"key": "devicemodel", "value": "Postman", "type": "text"},
+              {"key": "correlationid", "value": "postman-test-001", "type": "text"},
+              {"key": "Authorization", "value": "Bearer {{token}}", "type": "text"},
+              {"key": "Content-Type", "value": "application/json", "type": "text"}
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"size\": 10,\n  \"lastNum\": 0,\n  \"mobileUserUuid\": \"uuid-here\"\n}",
+              "options": {"raw": {"language": "json"}}
+            },
+            "url": {
+              "raw": "{{baseUrl}}/v1/cert-type-document",
+              "host": ["{{baseUrl}}"],
+              "path": ["v1", "cert-type-document"]
+            }
+          }
+        },
+        {
+          "name": "Preview Cert (User)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {"key": "language", "value": "TH", "type": "text"},
+              {"key": "devicemodel", "value": "Postman", "type": "text"},
+              {"key": "correlationid", "value": "postman-test-001", "type": "text"},
+              {"key": "Authorization", "value": "Bearer {{token}}", "type": "text"}
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/v1/cert-user-preview?certCode=&mobileUserUuid=",
+              "host": ["{{baseUrl}}"],
+              "path": ["v1", "cert-user-preview"],
+              "query": [
+                {"key": "certCode", "value": "", "description": "Certificate code"},
+                {"key": "mobileUserUuid", "value": "", "description": "Mobile user UUID"}
+              ]
+            }
+          }
+        },
+        {
+          "name": "Create Certification",
+          "request": {
+            "method": "POST",
+            "header": [
+              {"key": "language", "value": "TH", "type": "text"},
+              {"key": "devicemodel", "value": "Postman", "type": "text"},
+              {"key": "correlationid", "value": "postman-test-001", "type": "text"},
+              {"key": "Authorization", "value": "Bearer {{token}}", "type": "text"},
+              {"key": "Content-Type", "value": "application/json", "type": "text"}
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"documentCode\": \"DOC001\",\n  \"certStartDate\": \"2024-01-01\",\n  \"certEndDateType\": \"DATE\",\n  \"certEndDate\": \"2025-01-01\",\n  \"fileCert\": \"\",\n  \"fileCertName\": \"cert.pdf\",\n  \"userMobileUuid\": \"uuid-here\"\n}",
+              "options": {"raw": {"language": "json"}}
+            },
+            "url": {
+              "raw": "{{baseUrl}}/v1/documents/certification/create",
+              "host": ["{{baseUrl}}"],
+              "path": ["v1", "documents", "certification", "create"]
+            }
+          }
+        },
+        {
+          "name": "Update Certification",
+          "request": {
+            "method": "POST",
+            "header": [
+              {"key": "language", "value": "TH", "type": "text"},
+              {"key": "devicemodel", "value": "Postman", "type": "text"},
+              {"key": "correlationid", "value": "postman-test-001", "type": "text"},
+              {"key": "Authorization", "value": "Bearer {{token}}", "type": "text"},
+              {"key": "Content-Type", "value": "application/json", "type": "text"}
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"isChangeFile\": \"NO\",\n  \"documentCode\": \"DOC001\",\n  \"certStartDate\": \"2024-01-01\",\n  \"certEndDateType\": \"DATE\",\n  \"certEndDate\": \"2026-01-01\",\n  \"fileCert\": \"\",\n  \"fileCertName\": \"cert_updated.pdf\",\n  \"userMobileUuid\": \"uuid-here\"\n}",
+              "options": {"raw": {"language": "json"}}
+            },
+            "url": {
+              "raw": "{{baseUrl}}/v1/documents/certification/update",
+              "host": ["{{baseUrl}}"],
+              "path": ["v1", "documents", "certification", "update"]
+            }
+          }
+        },
+        {
+          "name": "Delete Certification",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {"key": "language", "value": "TH", "type": "text"},
+              {"key": "devicemodel", "value": "Postman", "type": "text"},
+              {"key": "correlationid", "value": "postman-test-001", "type": "text"},
+              {"key": "Authorization", "value": "Bearer {{token}}", "type": "text"}
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/v1/documents/certification/delete?certCode=&uUid=",
+              "host": ["{{baseUrl}}"],
+              "path": ["v1", "documents", "certification", "delete"],
+              "query": [
+                {"key": "certCode", "value": "", "description": "Certificate code"},
+                {"key": "uUid", "value": "", "description": "Mobile user UUID"}
+              ]
+            }
+          }
+        },
+        {
+          "name": "Edit Certification (Get)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {"key": "language", "value": "TH", "type": "text"},
+              {"key": "devicemodel", "value": "Postman", "type": "text"},
+              {"key": "correlationid", "value": "postman-test-001", "type": "text"},
+              {"key": "Authorization", "value": "Bearer {{token}}", "type": "text"}
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/v1/documents/certification/edit?certCode=&uUid=",
+              "host": ["{{baseUrl}}"],
+              "path": ["v1", "documents", "certification", "edit"],
+              "query": [
+                {"key": "certCode", "value": "", "description": "Certificate code"},
+                {"key": "uUid", "value": "", "description": "Mobile user UUID"}
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "🗂️ Menu & Group",
+      "item": [
+        {
+          "name": "List Menu",
+          "request": {
+            "method": "POST",
+            "header": [
+              {"key": "language", "value": "TH", "type": "text"},
+              {"key": "devicemodel", "value": "Postman", "type": "text"},
+              {"key": "correlationid", "value": "postman-test-001", "type": "text"},
+              {"key": "Authorization", "value": "Bearer {{token}}", "type": "text"},
+              {"key": "Content-Type", "value": "application/json", "type": "text"}
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"username\": \"admin\"\n}",
+              "options": {"raw": {"language": "json"}}
+            },
+            "url": {
+              "raw": "{{baseUrl}}/v1/list-menu",
+              "host": ["{{baseUrl}}"],
+              "path": ["v1", "list-menu"]
+            }
+          }
+        },
+        {
+          "name": "Get Authorised Menu",
+          "request": {
+            "method": "POST",
+            "header": [
+              {"key": "language", "value": "TH", "type": "text"},
+              {"key": "devicemodel", "value": "Postman", "type": "text"},
+              {"key": "correlationid", "value": "postman-test-001", "type": "text"},
+              {"key": "Authorization", "value": "Bearer {{token}}", "type": "text"},
+              {"key": "Content-Type", "value": "application/json", "type": "text"}
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"groupId\": \"1\",\n  \"menuCode\": \"MENU001\"\n}",
+              "options": {"raw": {"language": "json"}}
+            },
+            "url": {
+              "raw": "{{baseUrl}}/v1/get-authorised",
+              "host": ["{{baseUrl}}"],
+              "path": ["v1", "get-authorised"]
+            }
+          }
+        },
+        {
+          "name": "List Groups",
+          "request": {
+            "method": "POST",
+            "header": [
+              {"key": "language", "value": "TH", "type": "text"},
+              {"key": "devicemodel", "value": "Postman", "type": "text"},
+              {"key": "correlationid", "value": "postman-test-001", "type": "text"},
+              {"key": "Authorization", "value": "Bearer {{token}}", "type": "text"},
+              {"key": "Content-Type", "value": "application/json", "type": "text"}
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"size\": 10,\n  \"lastNum\": 0\n}",
+              "options": {"raw": {"language": "json"}}
+            },
+            "url": {
+              "raw": "{{baseUrl}}/v1/list-group",
+              "host": ["{{baseUrl}}"],
+              "path": ["v1", "list-group"]
+            }
+          }
+        },
+        {
+          "name": "Get Group by ID",
+          "request": {
+            "method": "GET",
+            "header": [
+              {"key": "language", "value": "TH", "type": "text"},
+              {"key": "devicemodel", "value": "Postman", "type": "text"},
+              {"key": "correlationid", "value": "postman-test-001", "type": "text"},
+              {"key": "Authorization", "value": "Bearer {{token}}", "type": "text"}
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/v1/list-group/:id",
+              "host": ["{{baseUrl}}"],
+              "path": ["v1", "list-group", ":id"],
+              "variable": [{"key": "id", "value": "1", "description": "Group ID"}]
+            }
+          }
+        },
+        {
+          "name": "Create Group",
+          "request": {
+            "method": "POST",
+            "header": [
+              {"key": "language", "value": "TH", "type": "text"},
+              {"key": "devicemodel", "value": "Postman", "type": "text"},
+              {"key": "correlationid", "value": "postman-test-001", "type": "text"},
+              {"key": "Authorization", "value": "Bearer {{token}}", "type": "text"},
+              {"key": "Content-Type", "value": "application/json", "type": "text"}
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"groupName\": \"Administrators\",\n  \"groupDescription\": \"Full access group\",\n  \"groupStatus\": \"ACTIVE\"\n}",
+              "options": {"raw": {"language": "json"}}
+            },
+            "url": {
+              "raw": "{{baseUrl}}/v1/group/add",
+              "host": ["{{baseUrl}}"],
+              "path": ["v1", "group", "add"]
+            }
+          }
+        },
+        {
+          "name": "Create Group Role (Add Detail)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {"key": "language", "value": "TH", "type": "text"},
+              {"key": "devicemodel", "value": "Postman", "type": "text"},
+              {"key": "correlationid", "value": "postman-test-001", "type": "text"},
+              {"key": "Authorization", "value": "Bearer {{token}}", "type": "text"},
+              {"key": "Content-Type", "value": "application/json", "type": "text"}
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"groupId\": \"1\",\n  \"groupName\": \"Administrators\",\n  \"groupStatus\": \"ACTIVE\",\n  \"groupDesc\": \"Full access group\",\n  \"menuAuthorlist\": []\n}",
+              "options": {"raw": {"language": "json"}}
+            },
+            "url": {
+              "raw": "{{baseUrl}}/v1/group/add-detail",
+              "host": ["{{baseUrl}}"],
+              "path": ["v1", "group", "add-detail"]
+            }
+          }
+        },
+        {
+          "name": "Update Group",
+          "request": {
+            "method": "POST",
+            "header": [
+              {"key": "language", "value": "TH", "type": "text"},
+              {"key": "devicemodel", "value": "Postman", "type": "text"},
+              {"key": "correlationid", "value": "postman-test-001", "type": "text"},
+              {"key": "Authorization", "value": "Bearer {{token}}", "type": "text"},
+              {"key": "Content-Type", "value": "application/json", "type": "text"}
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"groupId\": \"1\",\n  \"groupName\": \"Updated Admins\",\n  \"groupStatus\": \"ACTIVE\",\n  \"groupDesc\": \"Updated description\",\n  \"menuAuthorlist\": []\n}",
+              "options": {"raw": {"language": "json"}}
+            },
+            "url": {
+              "raw": "{{baseUrl}}/v1/group/update",
+              "host": ["{{baseUrl}}"],
+              "path": ["v1", "group", "update"]
+            }
+          }
+        },
+        {
+          "name": "Delete Group",
+          "request": {
+            "method": "POST",
+            "header": [
+              {"key": "language", "value": "TH", "type": "text"},
+              {"key": "devicemodel", "value": "Postman", "type": "text"},
+              {"key": "correlationid", "value": "postman-test-001", "type": "text"},
+              {"key": "Authorization", "value": "Bearer {{token}}", "type": "text"},
+              {"key": "Content-Type", "value": "application/json", "type": "text"}
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"groupId\": \"1\"\n}",
+              "options": {"raw": {"language": "json"}}
+            },
+            "url": {
+              "raw": "{{baseUrl}}/v1/group/delete",
+              "host": ["{{baseUrl}}"],
+              "path": ["v1", "group", "delete"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "🏠 System",
+      "item": [
+        {
+          "name": "Root",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/",
+              "host": ["{{baseUrl}}"],
+              "path": [""]
+            }
+          }
+        },
+        {
+          "name": "Health Check",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/actuator/health",
+              "host": ["{{baseUrl}}"],
+              "path": ["actuator", "health"]
+            }
+          }
+        },
+        {
+          "name": "App Asset Links",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/.well-known/assetlinks.json",
+              "host": ["{{baseUrl}}"],
+              "path": [".well-known", "assetlinks.json"]
+            }
+          }
+        }
+      ]
+    }
+  ]
+}
