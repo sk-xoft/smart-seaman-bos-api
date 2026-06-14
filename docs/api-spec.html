@@ -1,0 +1,1829 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Smart Seaman BOS API — Specification</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; font-size: 14px; color: #1a1a2e; background: #f4f6f9; display: flex; min-height: 100vh; }
+
+  /* Sidebar */
+  #sidebar { width: 260px; min-width: 260px; background: #1a1a2e; color: #c8d0e0; position: fixed; top: 0; left: 0; height: 100vh; overflow-y: auto; padding-bottom: 40px; z-index: 100; }
+  #sidebar .brand { padding: 24px 20px 16px; border-bottom: 1px solid #2a2a4a; }
+  #sidebar .brand h1 { font-size: 15px; font-weight: 700; color: #fff; line-height: 1.3; }
+  #sidebar .brand .base-url { font-size: 11px; color: #6b7db3; margin-top: 4px; font-family: monospace; }
+  #sidebar nav { padding: 12px 0; }
+  #sidebar nav a { display: block; padding: 7px 20px; color: #9aa8cc; text-decoration: none; font-size: 12px; font-weight: 500; transition: background .15s, color .15s; }
+  #sidebar nav a:hover { background: #2a2a4a; color: #fff; }
+  #sidebar nav .group-label { padding: 14px 20px 4px; font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: .08em; color: #4a5578; }
+
+  /* Main content */
+  #main { margin-left: 260px; padding: 32px 40px; flex: 1; max-width: 1100px; }
+  .page-header { background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%); color: #fff; border-radius: 10px; padding: 32px 36px; margin-bottom: 36px; }
+  .page-header h1 { font-size: 26px; font-weight: 700; }
+  .page-header p { margin-top: 8px; color: #9aa8cc; font-size: 14px; }
+  .page-header .meta { display: flex; gap: 20px; margin-top: 16px; flex-wrap: wrap; }
+  .page-header .meta span { background: rgba(255,255,255,.08); border-radius: 6px; padding: 4px 12px; font-size: 12px; color: #c8d0e0; font-family: monospace; }
+
+  /* Section */
+  .section { margin-bottom: 48px; }
+  .section-title { font-size: 18px; font-weight: 700; color: #1a1a2e; border-left: 4px solid #4361ee; padding-left: 12px; margin-bottom: 16px; scroll-margin-top: 20px; }
+
+  /* Endpoint card */
+  details { background: #fff; border-radius: 8px; border: 1px solid #e2e8f0; margin-bottom: 10px; overflow: hidden; box-shadow: 0 1px 3px rgba(0,0,0,.05); }
+  details[open] { box-shadow: 0 4px 12px rgba(0,0,0,.08); }
+  summary { cursor: pointer; list-style: none; padding: 14px 18px; display: flex; align-items: center; gap: 12px; user-select: none; }
+  summary::-webkit-details-marker { display: none; }
+  summary:hover { background: #f8fafc; }
+  .method { display: inline-block; font-size: 11px; font-weight: 700; padding: 3px 8px; border-radius: 4px; min-width: 56px; text-align: center; letter-spacing: .04em; flex-shrink: 0; }
+  .GET    { background: #d1fae5; color: #065f46; }
+  .POST   { background: #dbeafe; color: #1e40af; }
+  .PUT    { background: #fed7aa; color: #9a3412; }
+  .DELETE { background: #fee2e2; color: #991b1b; }
+  .PATCH  { background: #e9d5ff; color: #6b21a8; }
+  .path   { font-family: monospace; font-size: 13px; font-weight: 600; color: #1a1a2e; flex: 1; }
+  .summary-desc { font-size: 12px; color: #64748b; margin-left: auto; }
+  .badge-auth { font-size: 10px; padding: 2px 8px; border-radius: 10px; font-weight: 600; flex-shrink: 0; }
+  .auth-yes { background: #fef3c7; color: #92400e; }
+  .auth-no  { background: #dcfce7; color: #166534; }
+
+  /* Endpoint body */
+  .ep-body { padding: 16px 18px 20px; border-top: 1px solid #e2e8f0; }
+  .ep-section { margin-bottom: 16px; }
+  .ep-section:last-child { margin-bottom: 0; }
+  .ep-label { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .06em; color: #64748b; margin-bottom: 8px; }
+
+  /* Tables */
+  table { width: 100%; border-collapse: collapse; font-size: 12.5px; }
+  th { background: #f1f5f9; padding: 7px 10px; text-align: left; font-weight: 600; color: #475569; border-bottom: 2px solid #e2e8f0; }
+  td { padding: 6px 10px; border-bottom: 1px solid #f1f5f9; color: #334155; vertical-align: top; }
+  tr:last-child td { border-bottom: none; }
+  .req { color: #dc2626; font-weight: 600; font-size: 11px; }
+  .opt { color: #94a3b8; font-size: 11px; }
+  code { font-family: monospace; background: #f1f5f9; padding: 1px 5px; border-radius: 3px; font-size: 12px; }
+
+  /* Response note */
+  .response-box { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 6px; padding: 12px 14px; font-family: monospace; font-size: 12px; color: #334155; white-space: pre; }
+
+  /* Scrollbar */
+  #sidebar::-webkit-scrollbar { width: 4px; }
+  #sidebar::-webkit-scrollbar-thumb { background: #2a2a4a; border-radius: 2px; }
+</style>
+</head>
+<body>
+
+<nav id="sidebar">
+  <div class="brand">
+    <h1>Smart Seaman BOS API</h1>
+    <div class="base-url">Base URL: /v1</div>
+  </div>
+  <nav>
+    <div class="group-label">General</div>
+    <a href="#health">Health &amp; System</a>
+    <a href="#auth">Authentication</a>
+    <a href="#master">Master Data</a>
+
+    <div class="group-label">Administration</div>
+    <a href="#admin">Admin Users</a>
+    <a href="#menu">Menu</a>
+    <a href="#group">Groups &amp; Roles</a>
+
+    <div class="group-label">Content</div>
+    <a href="#course">Courses</a>
+    <a href="#news">News</a>
+    <a href="#banner">Banners</a>
+    <a href="#form">Forms / Documents</a>
+    <a href="#voucher">Vouchers</a>
+
+    <div class="group-label">Users</div>
+    <a href="#cert">Certifications</a>
+    <a href="#dashboard">Dashboard &amp; Mobile Users</a>
+  </nav>
+</nav>
+
+<main id="main">
+  <div class="page-header">
+    <h1>Smart Seaman BOS API</h1>
+    <p>Back Office System REST API — Spring Boot 2.6 / Java 11</p>
+    <div class="meta">
+      <span>Base URL: /v1</span>
+      <span>Auth: Bearer JWT</span>
+      <span>Content-Type: application/json</span>
+      <span>Envelope: { code, description, data }</span>
+    </div>
+  </div>
+
+  <!-- ===== HEALTH ===== -->
+  <div class="section" id="health">
+    <div class="section-title">Health &amp; System</div>
+
+    <details open>
+      <summary>
+        <span class="method GET">GET</span>
+        <span class="path">/health</span>
+        <span class="summary-desc">Health check</span>
+        <span class="badge-auth auth-no">Public</span>
+      </summary>
+      <div class="ep-body">
+        <div class="ep-section">
+          <div class="ep-label">Description</div>
+          Returns <code>"Success"</code> string when the API is online.
+        </div>
+        <div class="ep-section">
+          <div class="ep-label">Response</div>
+          <div class="response-box">200 OK  →  "Success"</div>
+        </div>
+      </div>
+    </details>
+
+    <details open>
+      <summary>
+        <span class="method GET">GET</span>
+        <span class="path">/.well-known/assetlinks.json</span>
+        <span class="summary-desc">Android App Links asset file</span>
+        <span class="badge-auth auth-no">Public</span>
+      </summary>
+      <div class="ep-body">
+        <div class="ep-section">
+          <div class="ep-label">Description</div>
+          Serves the Android asset-links JSON from the classpath resource <code>assetlinks.json</code> for App Link verification.
+        </div>
+        <div class="ep-section">
+          <div class="ep-label">Response</div>
+          <div class="response-box">200 OK  →  application/json  (assetlinks array)</div>
+        </div>
+      </div>
+    </details>
+  </div>
+
+  <!-- ===== AUTH ===== -->
+  <div class="section" id="auth">
+    <div class="section-title">Authentication</div>
+
+    <details open>
+      <summary>
+        <span class="method POST">POST</span>
+        <span class="path">/v1/login</span>
+        <span class="summary-desc">Admin login</span>
+        <span class="badge-auth auth-no">Public</span>
+      </summary>
+      <div class="ep-body">
+        <div class="ep-section">
+          <div class="ep-label">Request Headers</div>
+          <table><thead><tr><th>Header</th><th>Required</th><th>Description</th></tr></thead><tbody>
+            <tr><td><code>Language</code></td><td><span class="req">Yes</span></td><td>TH or EN</td></tr>
+            <tr><td><code>device-model</code></td><td><span class="req">Yes</span></td><td>Device model string</td></tr>
+            <tr><td><code>correlation-id</code></td><td><span class="req">Yes</span></td><td>Request trace ID (UUID)</td></tr>
+          </tbody></table>
+        </div>
+        <div class="ep-section">
+          <div class="ep-label">Request Body — <code>LoginRequest</code></div>
+          <table><thead><tr><th>Field</th><th>Type</th><th>Required</th><th>Description</th></tr></thead><tbody>
+            <tr><td><code>username</code></td><td>String</td><td><span class="req">Yes</span></td><td>Admin username</td></tr>
+            <tr><td><code>password</code></td><td>String</td><td><span class="req">Yes</span></td><td>Admin password</td></tr>
+          </tbody></table>
+        </div>
+        <div class="ep-section">
+          <div class="ep-label">Response — <code>LoginResponse</code></div>
+          <div class="response-box">{ "code": "S0000", "description": "...", "data": {
+  "token": "string",
+  "refToken": "string",
+  "username": "string",
+  "lastLoginDateTime": "string"
+} }</div>
+        </div>
+      </div>
+    </details>
+
+    <details open>
+      <summary>
+        <span class="method POST">POST</span>
+        <span class="path">/v1/register</span>
+        <span class="summary-desc">Register new admin user</span>
+        <span class="badge-auth auth-no">Public</span>
+      </summary>
+      <div class="ep-body">
+        <div class="ep-section">
+          <div class="ep-label">Request Headers</div>
+          <table><thead><tr><th>Header</th><th>Required</th><th>Description</th></tr></thead><tbody>
+            <tr><td><code>Language</code></td><td><span class="req">Yes</span></td><td>TH or EN</td></tr>
+            <tr><td><code>device-model</code></td><td><span class="req">Yes</span></td><td>Device model string</td></tr>
+            <tr><td><code>correlation-id</code></td><td><span class="req">Yes</span></td><td>Request trace ID</td></tr>
+          </tbody></table>
+        </div>
+        <div class="ep-section">
+          <div class="ep-label">Request Body — <code>RegisterRequest</code></div>
+          <table><thead><tr><th>Field</th><th>Type</th><th>Required</th><th>Description</th></tr></thead><tbody>
+            <tr><td><code>firstName</code></td><td>String</td><td><span class="req">Yes</span></td><td>First name</td></tr>
+            <tr><td><code>lastName</code></td><td>String</td><td><span class="req">Yes</span></td><td>Last name</td></tr>
+            <tr><td><code>companyCode</code></td><td>String</td><td><span class="opt">No</span></td><td>Company code</td></tr>
+            <tr><td><code>positionCode</code></td><td>String</td><td><span class="req">Yes</span></td><td>Position code</td></tr>
+            <tr><td><code>email</code></td><td>String</td><td><span class="req">Yes</span></td><td>Email address</td></tr>
+            <tr><td><code>password</code></td><td>String</td><td><span class="req">Yes</span></td><td>Password</td></tr>
+            <tr><td><code>mobileNumber</code></td><td>String</td><td><span class="req">Yes</span></td><td>Mobile number</td></tr>
+          </tbody></table>
+        </div>
+        <div class="ep-section">
+          <div class="ep-label">Response — <code>RegisterResponse</code></div>
+          <div class="response-box">{ "code": "S0000", "description": "...", "data": {
+  "username": "string",
+  "email": "string"
+} }</div>
+        </div>
+      </div>
+    </details>
+
+    <details open>
+      <summary>
+        <span class="method GET">GET</span>
+        <span class="path">/v1/profile</span>
+        <span class="summary-desc">Get current admin profile</span>
+        <span class="badge-auth auth-yes">Auth Required</span>
+      </summary>
+      <div class="ep-body">
+        <div class="ep-section">
+          <div class="ep-label">Request Headers</div>
+          <table><thead><tr><th>Header</th><th>Required</th><th>Description</th></tr></thead><tbody>
+            <tr><td><code>Authorization</code></td><td><span class="req">Yes</span></td><td>Bearer &lt;JWT token&gt;</td></tr>
+            <tr><td><code>Language</code></td><td><span class="req">Yes</span></td><td>TH or EN</td></tr>
+            <tr><td><code>device-model</code></td><td><span class="req">Yes</span></td><td>Device model string</td></tr>
+            <tr><td><code>correlation-id</code></td><td><span class="req">Yes</span></td><td>Request trace ID</td></tr>
+          </tbody></table>
+        </div>
+        <div class="ep-section">
+          <div class="ep-label">Response — <code>UserAdminProfileResponse</code></div>
+          <div class="response-box">{ "code": "S0000", "description": "...", "data": {
+  "firstName": "string",
+  "lastName": "string",
+  "mobile": "string",
+  "email": "string",
+  "companyCode": "string",
+  "companyDescription": "string",
+  "positionCode": "string",
+  "positionDescription": "string",
+  "shortName": "string",
+  "roleName": "string",
+  "groupId": 0
+} }</div>
+        </div>
+      </div>
+    </details>
+  </div>
+
+  <!-- ===== MASTER DATA ===== -->
+  <div class="section" id="master">
+    <div class="section-title">Master Data</div>
+
+    <details open>
+      <summary>
+        <span class="method GET">GET</span>
+        <span class="path">/v1/master</span>
+        <span class="summary-desc">All master data (company, position, schools, courses, groups, menus)</span>
+        <span class="badge-auth auth-no">Public</span>
+      </summary>
+      <div class="ep-body">
+        <div class="ep-section">
+          <div class="ep-label">Response — <code>MasterDataResponse</code></div>
+          <div class="response-box">{ "code": "S0000", "description": "...", "data": {
+  "company": [ { "companyCode": "string", "companyName": "string" } ],
+  "position": [ { "positionCode": "string", "positionName": "string" } ],
+  "schools": [ { "schoolCode": "string", "schoolName": "string" } ],
+  "allCourses": [ ... ],
+  "groups": [ ... ],
+  "menus": [ ... ]
+} }</div>
+        </div>
+      </div>
+    </details>
+
+    <details open>
+      <summary>
+        <span class="method GET">GET</span>
+        <span class="path">/v1/master/schools</span>
+        <span class="summary-desc">List schools</span>
+        <span class="badge-auth auth-no">Public</span>
+      </summary>
+      <div class="ep-body">
+        <div class="ep-section">
+          <div class="ep-label">Response — <code>MasterDataResponse</code></div>
+          <div class="response-box">{ "code": "S0000", "description": "...", "data": {
+  "schools": [ { "schoolCode": "string", "schoolName": "string" } ]
+} }</div>
+        </div>
+      </div>
+    </details>
+
+    <details open>
+      <summary>
+        <span class="method GET">GET</span>
+        <span class="path">/v1/master/companys</span>
+        <span class="summary-desc">List companies</span>
+        <span class="badge-auth auth-no">Public</span>
+      </summary>
+      <div class="ep-body">
+        <div class="ep-section">
+          <div class="ep-label">Response — <code>MasterDataResponse</code></div>
+          <div class="response-box">{ "code": "S0000", "description": "...", "data": {
+  "company": [ { "companyCode": "string", "companyName": "string" } ]
+} }</div>
+        </div>
+      </div>
+    </details>
+
+    <details open>
+      <summary>
+        <span class="method GET">GET</span>
+        <span class="path">/v1/master/course-name</span>
+        <span class="summary-desc">Get course names</span>
+        <span class="badge-auth auth-no">Public</span>
+      </summary>
+      <div class="ep-body">
+        <div class="ep-section">
+          <div class="ep-label">Response — <code>MasterDataResponse</code></div>
+          <div class="response-box">{ "code": "S0000", "description": "...", "data": { "allCourses": [ ... ] } }</div>
+        </div>
+      </div>
+    </details>
+
+    <details open>
+      <summary>
+        <span class="method GET">GET</span>
+        <span class="path">/v1/master/group-name</span>
+        <span class="summary-desc">Get group names</span>
+        <span class="badge-auth auth-no">Public</span>
+      </summary>
+      <div class="ep-body">
+        <div class="ep-section">
+          <div class="ep-label">Response — <code>MasterDataResponse</code></div>
+          <div class="response-box">{ "code": "S0000", "description": "...", "data": { "groups": [ ... ] } }</div>
+        </div>
+      </div>
+    </details>
+
+    <details open>
+      <summary>
+        <span class="method GET">GET</span>
+        <span class="path">/v1/master/menu</span>
+        <span class="summary-desc">Get menu names</span>
+        <span class="badge-auth auth-no">Public</span>
+      </summary>
+      <div class="ep-body">
+        <div class="ep-section">
+          <div class="ep-label">Response — <code>MasterDataResponse</code></div>
+          <div class="response-box">{ "code": "S0000", "description": "...", "data": { "menus": [ ... ] } }</div>
+        </div>
+      </div>
+    </details>
+
+    <details open>
+      <summary>
+        <span class="method GET">GET</span>
+        <span class="path">/v1/master/documents</span>
+        <span class="summary-desc">Get master documents and COT list</span>
+        <span class="badge-auth auth-no">Public</span>
+      </summary>
+      <div class="ep-body">
+        <div class="ep-section">
+          <div class="ep-label">Response — <code>MasterDataDocumentResponse</code></div>
+          <div class="response-box">{ "code": "S0000", "description": "...", "data": {
+  "documents": [ { "documentCode": "string", "documentName": "string", "documentNameTh": "string" } ],
+  "cot": [ { "documentCode": "string", "documentName": "string", "documentNameTh": "string" } ]
+} }</div>
+        </div>
+      </div>
+    </details>
+
+    <details open>
+      <summary>
+        <span class="method GET">GET</span>
+        <span class="path">/v1/master/company</span>
+        <span class="summary-desc">Get master company list</span>
+        <span class="badge-auth auth-no">Public</span>
+      </summary>
+      <div class="ep-body">
+        <div class="ep-section">
+          <div class="ep-label">Response — <code>MasterCompanyResponse</code></div>
+          <div class="response-box">{ "code": "S0000", "description": "...", "data": {
+  "company": [ { ... } ]
+} }</div>
+        </div>
+      </div>
+    </details>
+  </div>
+
+  <!-- ===== ADMIN ===== -->
+  <div class="section" id="admin">
+    <div class="section-title">Admin Users</div>
+
+    <details open>
+      <summary>
+        <span class="method POST">POST</span>
+        <span class="path">/v1/list-admin</span>
+        <span class="summary-desc">List all admins (paginated)</span>
+        <span class="badge-auth auth-yes">Auth Required</span>
+      </summary>
+      <div class="ep-body">
+        <div class="ep-section">
+          <div class="ep-label">Request Body — <code>AdminRequest</code></div>
+          <table><thead><tr><th>Field</th><th>Type</th><th>Required</th><th>Description</th></tr></thead><tbody>
+            <tr><td><code>size</code></td><td>Integer</td><td><span class="opt">No</span></td><td>Page size</td></tr>
+            <tr><td><code>lastNum</code></td><td>Integer</td><td><span class="opt">No</span></td><td>Last record number for pagination</td></tr>
+            <tr><td><code>groupId</code></td><td>String</td><td><span class="opt">No</span></td><td>Filter by group ID</td></tr>
+            <tr><td><code>username</code></td><td>String</td><td><span class="opt">No</span></td><td>Filter by username</td></tr>
+            <tr><td><code>userStatus</code></td><td>String</td><td><span class="opt">No</span></td><td>Filter by status</td></tr>
+          </tbody></table>
+        </div>
+        <div class="ep-section">
+          <div class="ep-label">Response — <code>AdminResponse</code></div>
+          <div class="response-box">{ "code": "S0000", "description": "...", "data": {
+  "totalData": 0,
+  "size": 0,
+  "lastNum": 0,
+  "endFlag": "string",
+  "adminUserList": [ { ... } ],
+  "countList": 0
+} }</div>
+        </div>
+      </div>
+    </details>
+
+    <details open>
+      <summary>
+        <span class="method GET">GET</span>
+        <span class="path">/v1/list-admin/{id}</span>
+        <span class="summary-desc">Get admin by ID</span>
+        <span class="badge-auth auth-yes">Auth Required</span>
+      </summary>
+      <div class="ep-body">
+        <div class="ep-section">
+          <div class="ep-label">Path Parameters</div>
+          <table><thead><tr><th>Parameter</th><th>Type</th><th>Required</th><th>Description</th></tr></thead><tbody>
+            <tr><td><code>id</code></td><td>String</td><td><span class="req">Yes</span></td><td>Admin user ID</td></tr>
+          </tbody></table>
+        </div>
+        <div class="ep-section">
+          <div class="ep-label">Response — <code>AdminResponse</code></div>
+          <div class="response-box">{ "code": "S0000", "description": "...", "data": { "adminUserList": [ { ... } ] } }</div>
+        </div>
+      </div>
+    </details>
+
+    <details open>
+      <summary>
+        <span class="method POST">POST</span>
+        <span class="path">/v1/admin/add</span>
+        <span class="summary-desc">Create new admin user</span>
+        <span class="badge-auth auth-yes">Auth Required</span>
+      </summary>
+      <div class="ep-body">
+        <div class="ep-section">
+          <div class="ep-label">Request Body — <code>AdminRequest</code></div>
+          <table><thead><tr><th>Field</th><th>Type</th><th>Required</th><th>Description</th></tr></thead><tbody>
+            <tr><td><code>groupId</code></td><td>String</td><td><span class="opt">No</span></td><td>Role/Group ID</td></tr>
+            <tr><td><code>username</code></td><td>String</td><td><span class="opt">No</span></td><td>Username</td></tr>
+            <tr><td><code>password</code></td><td>String</td><td><span class="opt">No</span></td><td>Password</td></tr>
+            <tr><td><code>firstName</code></td><td>String</td><td><span class="opt">No</span></td><td>First name</td></tr>
+            <tr><td><code>lastName</code></td><td>String</td><td><span class="opt">No</span></td><td>Last name</td></tr>
+            <tr><td><code>companyCode</code></td><td>String</td><td><span class="opt">No</span></td><td>Company code</td></tr>
+            <tr><td><code>positions</code></td><td>String</td><td><span class="opt">No</span></td><td>Position code</td></tr>
+            <tr><td><code>email</code></td><td>String</td><td><span class="opt">No</span></td><td>Email</td></tr>
+            <tr><td><code>mobileNumber</code></td><td>String</td><td><span class="opt">No</span></td><td>Mobile number</td></tr>
+            <tr><td><code>displayType</code></td><td>String</td><td><span class="opt">No</span></td><td>Display type</td></tr>
+            <tr><td><code>displayName</code></td><td>String</td><td><span class="opt">No</span></td><td>Display name</td></tr>
+            <tr><td><code>profilePicture</code></td><td>String</td><td><span class="opt">No</span></td><td>Profile picture URL or base64</td></tr>
+            <tr><td><code>pictureFromFile</code></td><td>String</td><td><span class="opt">No</span></td><td>Base64 picture from file upload</td></tr>
+            <tr><td><code>userStatus</code></td><td>String</td><td><span class="opt">No</span></td><td>User status</td></tr>
+          </tbody></table>
+        </div>
+        <div class="ep-section">
+          <div class="ep-label">Response — <code>AdminResponse</code></div>
+          <div class="response-box">{ "code": "S0000", "description": "...", "data": { "adminUserId": 0 } }</div>
+        </div>
+      </div>
+    </details>
+
+    <details open>
+      <summary>
+        <span class="method POST">POST</span>
+        <span class="path">/v1/admin/update</span>
+        <span class="summary-desc">Update admin user</span>
+        <span class="badge-auth auth-yes">Auth Required</span>
+      </summary>
+      <div class="ep-body">
+        <div class="ep-section">
+          <div class="ep-label">Request Body — <code>AdminRequest</code></div>
+          <p style="color:#64748b;font-size:12px;">Same fields as <code>/admin/add</code>. Include <code>adminUserId</code> to identify the target.</p>
+        </div>
+        <div class="ep-section">
+          <div class="ep-label">Response — <code>AdminResponse</code></div>
+          <div class="response-box">{ "code": "S0000", "description": "...", "data": { ... } }</div>
+        </div>
+      </div>
+    </details>
+
+    <details open>
+      <summary>
+        <span class="method POST">POST</span>
+        <span class="path">/v1/admin/delete</span>
+        <span class="summary-desc">Delete admin user</span>
+        <span class="badge-auth auth-yes">Auth Required</span>
+      </summary>
+      <div class="ep-body">
+        <div class="ep-section">
+          <div class="ep-label">Request Body</div>
+          <table><thead><tr><th>Field</th><th>Type</th><th>Required</th><th>Description</th></tr></thead><tbody>
+            <tr><td><code>adminUserId</code></td><td>Integer</td><td><span class="req">Yes</span></td><td>Admin user ID to delete</td></tr>
+          </tbody></table>
+        </div>
+        <div class="ep-section">
+          <div class="ep-label">Response — <code>AdminResponse</code></div>
+          <div class="response-box">{ "code": "S0000", "description": "...", "data": { ... } }</div>
+        </div>
+      </div>
+    </details>
+
+    <details open>
+      <summary>
+        <span class="method POST">POST</span>
+        <span class="path">/v1/admin/update-password</span>
+        <span class="summary-desc">Update admin password</span>
+        <span class="badge-auth auth-yes">Auth Required</span>
+      </summary>
+      <div class="ep-body">
+        <div class="ep-section">
+          <div class="ep-label">Request Body — <code>UpdatePasswordRequest</code></div>
+          <table><thead><tr><th>Field</th><th>Type</th><th>Required</th><th>Description</th></tr></thead><tbody>
+            <tr><td><code>username</code></td><td>String</td><td><span class="opt">No</span></td><td>Username</td></tr>
+            <tr><td><code>adminId</code></td><td>String</td><td><span class="opt">No</span></td><td>Admin ID</td></tr>
+            <tr><td><code>oldPassword</code></td><td>String</td><td><span class="opt">No</span></td><td>Current password</td></tr>
+            <tr><td><code>newPassword</code></td><td>String</td><td><span class="opt">No</span></td><td>New password</td></tr>
+            <tr><td><code>confirmPassword</code></td><td>String</td><td><span class="opt">No</span></td><td>Confirm new password</td></tr>
+          </tbody></table>
+        </div>
+        <div class="ep-section">
+          <div class="ep-label">Response — <code>UpdatePasswordResponse</code></div>
+          <div class="response-box">{ "code": "S0000", "description": "...", "data": { "username": "string" } }</div>
+        </div>
+      </div>
+    </details>
+
+    <details open>
+      <summary>
+        <span class="method GET">GET</span>
+        <span class="path">/v1/profile/pic</span>
+        <span class="summary-desc">Get current admin profile picture (binary image)</span>
+        <span class="badge-auth auth-yes">Auth Required</span>
+      </summary>
+      <div class="ep-body">
+        <div class="ep-section">
+          <div class="ep-label">Response</div>
+          <div class="response-box">200 OK  →  image/png  (raw bytes)</div>
+        </div>
+      </div>
+    </details>
+  </div>
+
+  <!-- ===== MENU ===== -->
+  <div class="section" id="menu">
+    <div class="section-title">Menu</div>
+
+    <details open>
+      <summary>
+        <span class="method POST">POST</span>
+        <span class="path">/v1/list-menu</span>
+        <span class="summary-desc">Get menu list for a user</span>
+        <span class="badge-auth auth-yes">Auth Required</span>
+      </summary>
+      <div class="ep-body">
+        <div class="ep-section">
+          <div class="ep-label">Request Body — <code>MenuRequest</code></div>
+          <table><thead><tr><th>Field</th><th>Type</th><th>Required</th><th>Description</th></tr></thead><tbody>
+            <tr><td><code>username</code></td><td>String</td><td><span class="req">Yes</span></td><td>Admin username</td></tr>
+          </tbody></table>
+        </div>
+        <div class="ep-section">
+          <div class="ep-label">Response — <code>MenuResponse</code></div>
+          <div class="response-box">{ "code": "S0000", "description": "...", "data": {
+  "roleInfo": { ... },
+  "roleId": "string",
+  "roleName": "string",
+  "menu": [
+    { "menuIcon": "string", "menuCode": "string", "menuNameTh": "string",
+      "menuUrl": "string", "menuGroup": "string", "menuId": 0,
+      "menuChild": [ { "childIcon": "string", "childCode": "string",
+                       "childName": "string", "childUrl": "string", "childGroup": "string" } ] }
+  ]
+} }</div>
+        </div>
+      </div>
+    </details>
+
+    <details open>
+      <summary>
+        <span class="method POST">POST</span>
+        <span class="path">/v1/get-authorised</span>
+        <span class="summary-desc">Get permission list for a menu item</span>
+        <span class="badge-auth auth-yes">Auth Required</span>
+      </summary>
+      <div class="ep-body">
+        <div class="ep-section">
+          <div class="ep-label">Request Body — <code>MenuAuthorizedRequest</code></div>
+          <table><thead><tr><th>Field</th><th>Type</th><th>Required</th><th>Description</th></tr></thead><tbody>
+            <tr><td><code>groupId</code></td><td>String</td><td><span class="req">Yes</span></td><td>Role/Group ID</td></tr>
+            <tr><td><code>menuCode</code></td><td>String</td><td><span class="req">Yes</span></td><td>Menu code</td></tr>
+          </tbody></table>
+        </div>
+        <div class="ep-section">
+          <div class="ep-label">Response — <code>MenuAuthorizedResponse</code></div>
+          <div class="response-box">{ "code": "S0000", "description": "...", "data": {
+  "menuCode": "string",
+  "permission": [ { "permissionCode": "string", "permissionValue": "string" } ]
+} }</div>
+        </div>
+      </div>
+    </details>
+  </div>
+
+  <!-- ===== GROUPS ===== -->
+  <div class="section" id="group">
+    <div class="section-title">Groups &amp; Roles</div>
+
+    <details open>
+      <summary>
+        <span class="method POST">POST</span>
+        <span class="path">/v1/list-group</span>
+        <span class="summary-desc">List all groups (paginated)</span>
+        <span class="badge-auth auth-yes">Auth Required</span>
+      </summary>
+      <div class="ep-body">
+        <div class="ep-section">
+          <div class="ep-label">Request Body — <code>GroupRequest</code></div>
+          <table><thead><tr><th>Field</th><th>Type</th><th>Required</th><th>Description</th></tr></thead><tbody>
+            <tr><td><code>size</code></td><td>Integer</td><td><span class="opt">No</span></td><td>Page size</td></tr>
+            <tr><td><code>lastNum</code></td><td>Integer</td><td><span class="opt">No</span></td><td>Pagination offset</td></tr>
+            <tr><td><code>groupName</code></td><td>String</td><td><span class="opt">No</span></td><td>Filter by name</td></tr>
+            <tr><td><code>groupStatus</code></td><td>String</td><td><span class="opt">No</span></td><td>Filter by status</td></tr>
+          </tbody></table>
+        </div>
+        <div class="ep-section">
+          <div class="ep-label">Response — <code>GroupRs</code></div>
+          <div class="response-box">{ "code": "S0000", "description": "...", "data": {
+  "totalData": 0, "size": 0, "lastNum": 0,
+  "groupList": [ { ... } ], "countList": 0
+} }</div>
+        </div>
+      </div>
+    </details>
+
+    <details open>
+      <summary>
+        <span class="method GET">GET</span>
+        <span class="path">/v1/list-group/{id}</span>
+        <span class="summary-desc">Get group by ID with menu authorizations</span>
+        <span class="badge-auth auth-yes">Auth Required</span>
+      </summary>
+      <div class="ep-body">
+        <div class="ep-section">
+          <div class="ep-label">Path Parameters</div>
+          <table><thead><tr><th>Parameter</th><th>Type</th><th>Required</th><th>Description</th></tr></thead><tbody>
+            <tr><td><code>id</code></td><td>String</td><td><span class="req">Yes</span></td><td>Group ID</td></tr>
+          </tbody></table>
+        </div>
+        <div class="ep-section">
+          <div class="ep-label">Response — <code>GroupRs</code></div>
+          <div class="response-box">{ "code": "S0000", "description": "...", "data": {
+  "groupList": [ { ... } ],
+  "menuAuthorlist": [ { ... } ]
+} }</div>
+        </div>
+      </div>
+    </details>
+
+    <details open>
+      <summary>
+        <span class="method POST">POST</span>
+        <span class="path">/v1/group/add</span>
+        <span class="summary-desc">Create new group</span>
+        <span class="badge-auth auth-yes">Auth Required</span>
+      </summary>
+      <div class="ep-body">
+        <div class="ep-section">
+          <div class="ep-label">Request Body — <code>GroupRequest</code></div>
+          <table><thead><tr><th>Field</th><th>Type</th><th>Required</th><th>Description</th></tr></thead><tbody>
+            <tr><td><code>groupName</code></td><td>String</td><td><span class="opt">No</span></td><td>Group name</td></tr>
+            <tr><td><code>groupDescription</code></td><td>String</td><td><span class="opt">No</span></td><td>Description</td></tr>
+            <tr><td><code>groupStatus</code></td><td>String</td><td><span class="opt">No</span></td><td>Status</td></tr>
+          </tbody></table>
+        </div>
+        <div class="ep-section">
+          <div class="ep-label">Response — <code>GroupRs</code></div>
+          <div class="response-box">{ "code": "S0000", "description": "...", "data": { "groupId": 0 } }</div>
+        </div>
+      </div>
+    </details>
+
+    <details open>
+      <summary>
+        <span class="method POST">POST</span>
+        <span class="path">/v1/group/add-detail</span>
+        <span class="summary-desc">Create group role (assign menu permissions to group)</span>
+        <span class="badge-auth auth-yes">Auth Required</span>
+      </summary>
+      <div class="ep-body">
+        <div class="ep-section">
+          <div class="ep-label">Request Body — <code>GroupRoleRq</code></div>
+          <table><thead><tr><th>Field</th><th>Type</th><th>Required</th><th>Description</th></tr></thead><tbody>
+            <tr><td><code>groupId</code></td><td>Integer</td><td><span class="opt">No</span></td><td>Group ID</td></tr>
+            <tr><td><code>groupName</code></td><td>String</td><td><span class="opt">No</span></td><td>Group name</td></tr>
+            <tr><td><code>groupStatus</code></td><td>String</td><td><span class="opt">No</span></td><td>Status</td></tr>
+            <tr><td><code>groupDesc</code></td><td>String</td><td><span class="opt">No</span></td><td>Description</td></tr>
+            <tr><td><code>menuAuthorlist</code></td><td>List&lt;GroupRoleEntity&gt;</td><td><span class="opt">No</span></td><td>Menu authorization list</td></tr>
+          </tbody></table>
+        </div>
+        <div class="ep-section">
+          <div class="ep-label">Response — <code>GroupRs</code></div>
+          <div class="response-box">{ "code": "S0000", "description": "...", "data": { ... } }</div>
+        </div>
+      </div>
+    </details>
+
+    <details open>
+      <summary>
+        <span class="method POST">POST</span>
+        <span class="path">/v1/group/update</span>
+        <span class="summary-desc">Update group and its menu permissions</span>
+        <span class="badge-auth auth-yes">Auth Required</span>
+      </summary>
+      <div class="ep-body">
+        <div class="ep-section">
+          <div class="ep-label">Request Body — <code>GroupRoleRq</code></div>
+          <p style="color:#64748b;font-size:12px;">Same as <code>/group/add-detail</code>.</p>
+        </div>
+        <div class="ep-section">
+          <div class="ep-label">Response — <code>GroupRs</code></div>
+          <div class="response-box">{ "code": "S0000", "description": "...", "data": { ... } }</div>
+        </div>
+      </div>
+    </details>
+
+    <details open>
+      <summary>
+        <span class="method POST">POST</span>
+        <span class="path">/v1/group/delete</span>
+        <span class="summary-desc">Delete group</span>
+        <span class="badge-auth auth-yes">Auth Required</span>
+      </summary>
+      <div class="ep-body">
+        <div class="ep-section">
+          <div class="ep-label">Request Body</div>
+          <table><thead><tr><th>Field</th><th>Type</th><th>Required</th><th>Description</th></tr></thead><tbody>
+            <tr><td><code>groupId</code></td><td>Integer</td><td><span class="req">Yes</span></td><td>Group ID to delete</td></tr>
+          </tbody></table>
+        </div>
+        <div class="ep-section">
+          <div class="ep-label">Response — <code>GroupRs</code></div>
+          <div class="response-box">{ "code": "S0000", "description": "...", "data": { ... } }</div>
+        </div>
+      </div>
+    </details>
+  </div>
+
+  <!-- ===== COURSES ===== -->
+  <div class="section" id="course">
+    <div class="section-title">Courses</div>
+
+    <details open>
+      <summary>
+        <span class="method POST">POST</span>
+        <span class="path">/v1/list-course</span>
+        <span class="summary-desc">List all courses (paginated)</span>
+        <span class="badge-auth auth-yes">Auth Required</span>
+      </summary>
+      <div class="ep-body">
+        <div class="ep-section">
+          <div class="ep-label">Request Body — <code>CourseRq</code></div>
+          <table><thead><tr><th>Field</th><th>Type</th><th>Required</th><th>Description</th></tr></thead><tbody>
+            <tr><td><code>size</code></td><td>Integer</td><td><span class="opt">No</span></td><td>Page size</td></tr>
+            <tr><td><code>lastNum</code></td><td>Integer</td><td><span class="opt">No</span></td><td>Pagination offset</td></tr>
+            <tr><td><code>courseCode</code></td><td>String</td><td><span class="opt">No</span></td><td>Filter by course code</td></tr>
+            <tr><td><code>courseSchoolCode</code></td><td>String</td><td><span class="opt">No</span></td><td>Filter by school code</td></tr>
+            <tr><td><code>courseType</code></td><td>String</td><td><span class="opt">No</span></td><td>Course type</td></tr>
+            <tr><td><code>courseStatus</code></td><td>String</td><td><span class="opt">No</span></td><td>Filter by status</td></tr>
+          </tbody></table>
+        </div>
+        <div class="ep-section">
+          <div class="ep-label">Response — <code>CourseRs</code></div>
+          <div class="response-box">{ "code": "S0000", "description": "...", "data": {
+  "totalData": 0, "size": 0, "lastNum": 0,
+  "courseList": [
+    { "courseNum": 0, "courseId": 0, "courseCode": "string", "courseName": "string",
+      "courseNameTh": "string", "courseNameEn": "string", "courseSchoolCode": "string",
+      "courseSchoolName": "string", "courseType": "string", "courseOnlineDate": "string",
+      "courseOnsiteDate": "string", "courseColour": "string", "courseTotalDays": "string",
+      "coursePrice": 0.0, "courseStatus": "string" }
+  ], "countList": 0
+} }</div>
+        </div>
+      </div>
+    </details>
+
+    <details open>
+      <summary>
+        <span class="method GET">GET</span>
+        <span class="path">/v1/list-course/{id}</span>
+        <span class="summary-desc">Get course by ID</span>
+        <span class="badge-auth auth-yes">Auth Required</span>
+      </summary>
+      <div class="ep-body">
+        <div class="ep-section">
+          <div class="ep-label">Path Parameters</div>
+          <table><thead><tr><th>Parameter</th><th>Type</th><th>Required</th><th>Description</th></tr></thead><tbody>
+            <tr><td><code>id</code></td><td>String</td><td><span class="req">Yes</span></td><td>Course ID</td></tr>
+          </tbody></table>
+        </div>
+        <div class="ep-section">
+          <div class="ep-label">Response — <code>CourseRs</code></div>
+          <div class="response-box">{ "code": "S0000", "description": "...", "data": { "courseList": [ { ... } ] } }</div>
+        </div>
+      </div>
+    </details>
+
+    <details open>
+      <summary>
+        <span class="method POST">POST</span>
+        <span class="path">/v1/course/add</span>
+        <span class="summary-desc">Create new course</span>
+        <span class="badge-auth auth-yes">Auth Required</span>
+      </summary>
+      <div class="ep-body">
+        <div class="ep-section">
+          <div class="ep-label">Request Body — <code>CourseRq</code></div>
+          <table><thead><tr><th>Field</th><th>Type</th><th>Required</th><th>Description</th></tr></thead><tbody>
+            <tr><td><code>courseCode</code></td><td>String</td><td><span class="opt">No</span></td><td>Course code</td></tr>
+            <tr><td><code>courseSchoolCode</code></td><td>String</td><td><span class="opt">No</span></td><td>School code</td></tr>
+            <tr><td><code>courseType</code></td><td>String</td><td><span class="opt">No</span></td><td>Course type</td></tr>
+            <tr><td><code>courseOnlineDate</code></td><td>String</td><td><span class="opt">No</span></td><td>Online date</td></tr>
+            <tr><td><code>courseOnsiteDate</code></td><td>String</td><td><span class="opt">No</span></td><td>Onsite date</td></tr>
+            <tr><td><code>courseColour</code></td><td>String</td><td><span class="opt">No</span></td><td>Color hex</td></tr>
+            <tr><td><code>courseTotalDays</code></td><td>String</td><td><span class="opt">No</span></td><td>Total days</td></tr>
+            <tr><td><code>coursePrice</code></td><td>Double</td><td><span class="opt">No</span></td><td>Price</td></tr>
+            <tr><td><code>courseStatus</code></td><td>String</td><td><span class="opt">No</span></td><td>Status</td></tr>
+          </tbody></table>
+        </div>
+        <div class="ep-section">
+          <div class="ep-label">Response — <code>CourseRs</code></div>
+          <div class="response-box">{ "code": "S0000", "description": "...", "data": { "courseId": "string", "courseCode": "string" } }</div>
+        </div>
+      </div>
+    </details>
+
+    <details open>
+      <summary>
+        <span class="method POST">POST</span>
+        <span class="path">/v1/course/update</span>
+        <span class="summary-desc">Update course</span>
+        <span class="badge-auth auth-yes">Auth Required</span>
+      </summary>
+      <div class="ep-body">
+        <div class="ep-section">
+          <div class="ep-label">Request Body — <code>CourseRq</code></div>
+          <p style="color:#64748b;font-size:12px;">Include <code>courseId</code> plus fields to update. Same shape as <code>/course/add</code>.</p>
+        </div>
+        <div class="ep-section">
+          <div class="ep-label">Response — <code>CourseRs</code></div>
+          <div class="response-box">{ "code": "S0000", "description": "...", "data": { ... } }</div>
+        </div>
+      </div>
+    </details>
+
+    <details open>
+      <summary>
+        <span class="method POST">POST</span>
+        <span class="path">/v1/course/delete</span>
+        <span class="summary-desc">Delete course</span>
+        <span class="badge-auth auth-yes">Auth Required</span>
+      </summary>
+      <div class="ep-body">
+        <div class="ep-section">
+          <div class="ep-label">Request Body</div>
+          <table><thead><tr><th>Field</th><th>Type</th><th>Required</th><th>Description</th></tr></thead><tbody>
+            <tr><td><code>courseId</code></td><td>String</td><td><span class="req">Yes</span></td><td>Course ID to delete</td></tr>
+          </tbody></table>
+        </div>
+        <div class="ep-section">
+          <div class="ep-label">Response — <code>CourseRs</code></div>
+          <div class="response-box">{ "code": "S0000", "description": "...", "data": { ... } }</div>
+        </div>
+      </div>
+    </details>
+  </div>
+
+  <!-- ===== NEWS ===== -->
+  <div class="section" id="news">
+    <div class="section-title">News</div>
+
+    <details open>
+      <summary>
+        <span class="method POST">POST</span>
+        <span class="path">/v1/list-news</span>
+        <span class="summary-desc">List all news (paginated)</span>
+        <span class="badge-auth auth-yes">Auth Required</span>
+      </summary>
+      <div class="ep-body">
+        <div class="ep-section">
+          <div class="ep-label">Request Body — <code>NewsRq</code></div>
+          <table><thead><tr><th>Field</th><th>Type</th><th>Required</th><th>Description</th></tr></thead><tbody>
+            <tr><td><code>size</code></td><td>Integer</td><td><span class="opt">No</span></td><td>Page size</td></tr>
+            <tr><td><code>lastNum</code></td><td>Integer</td><td><span class="opt">No</span></td><td>Pagination offset</td></tr>
+            <tr><td><code>newsTitle</code></td><td>String</td><td><span class="opt">No</span></td><td>Filter by title</td></tr>
+            <tr><td><code>newsType</code></td><td>String</td><td><span class="opt">No</span></td><td>Filter by type</td></tr>
+            <tr><td><code>newsStatus</code></td><td>String</td><td><span class="opt">No</span></td><td>Filter by status</td></tr>
+          </tbody></table>
+        </div>
+        <div class="ep-section">
+          <div class="ep-label">Response — <code>NewsRs</code></div>
+          <div class="response-box">{ "code": "S0000", "description": "...", "data": {
+  "totalData": 0, "size": 0, "lastNum": 0,
+  "newsList": [ { ... } ], "countList": 0
+} }</div>
+        </div>
+      </div>
+    </details>
+
+    <details open>
+      <summary>
+        <span class="method GET">GET</span>
+        <span class="path">/v1/list-news/{id}</span>
+        <span class="summary-desc">Get news by ID</span>
+        <span class="badge-auth auth-yes">Auth Required</span>
+      </summary>
+      <div class="ep-body">
+        <div class="ep-section">
+          <div class="ep-label">Path Parameters</div>
+          <table><thead><tr><th>Parameter</th><th>Type</th><th>Required</th><th>Description</th></tr></thead><tbody>
+            <tr><td><code>id</code></td><td>String</td><td><span class="req">Yes</span></td><td>News ID</td></tr>
+          </tbody></table>
+        </div>
+        <div class="ep-section">
+          <div class="ep-label">Response — <code>NewsRs</code></div>
+          <div class="response-box">{ "code": "S0000", "description": "...", "data": { "newsList": [ { ... } ] } }</div>
+        </div>
+      </div>
+    </details>
+
+    <details open>
+      <summary>
+        <span class="method POST">POST</span>
+        <span class="path">/v1/news/add</span>
+        <span class="summary-desc">Create news (auto FCM push)</span>
+        <span class="badge-auth auth-yes">Auth Required</span>
+      </summary>
+      <div class="ep-body">
+        <div class="ep-section">
+          <div class="ep-label">Request Body — <code>NewsRq</code></div>
+          <table><thead><tr><th>Field</th><th>Type</th><th>Required</th><th>Description</th></tr></thead><tbody>
+            <tr><td><code>newsTitle</code></td><td>String</td><td><span class="opt">No</span></td><td>Title</td></tr>
+            <tr><td><code>newsPictureFileName</code></td><td>String</td><td><span class="opt">No</span></td><td>Picture filename</td></tr>
+            <tr><td><code>newsPictureFromFile</code></td><td>String</td><td><span class="opt">No</span></td><td>Base64 image</td></tr>
+            <tr><td><code>newsType</code></td><td>String</td><td><span class="opt">No</span></td><td>Type</td></tr>
+            <tr><td><code>newsDetails</code></td><td>String</td><td><span class="opt">No</span></td><td>Content/details</td></tr>
+            <tr><td><code>newsStatus</code></td><td>String</td><td><span class="opt">No</span></td><td>Status</td></tr>
+          </tbody></table>
+        </div>
+        <div class="ep-section">
+          <div class="ep-label">Response — <code>NewsRs</code></div>
+          <div class="response-box">{ "code": "S0000", "description": "...", "data": { "newsId": 0 } }</div>
+        </div>
+      </div>
+    </details>
+
+    <details open>
+      <summary>
+        <span class="method POST">POST</span>
+        <span class="path">/v1/news/add/manual</span>
+        <span class="summary-desc">Create news manually (no auto push)</span>
+        <span class="badge-auth auth-yes">Auth Required</span>
+      </summary>
+      <div class="ep-body">
+        <div class="ep-section">
+          <div class="ep-label">Request Body — <code>NewsRq</code></div>
+          <p style="color:#64748b;font-size:12px;">Same shape as <code>/news/add</code>. No automatic FCM notification is fired.</p>
+        </div>
+        <div class="ep-section">
+          <div class="ep-label">Response — <code>NewsRs</code></div>
+          <div class="response-box">{ "code": "S0000", "description": "...", "data": { "newsId": 0 } }</div>
+        </div>
+      </div>
+    </details>
+
+    <details open>
+      <summary>
+        <span class="method POST">POST</span>
+        <span class="path">/v1/news/update</span>
+        <span class="summary-desc">Update news</span>
+        <span class="badge-auth auth-yes">Auth Required</span>
+      </summary>
+      <div class="ep-body">
+        <div class="ep-section">
+          <div class="ep-label">Request Body — <code>NewsRq</code></div>
+          <p style="color:#64748b;font-size:12px;">Include <code>newsId</code> plus fields to update.</p>
+        </div>
+        <div class="ep-section">
+          <div class="ep-label">Response — <code>NewsRs</code></div>
+          <div class="response-box">{ "code": "S0000", "description": "...", "data": { ... } }</div>
+        </div>
+      </div>
+    </details>
+
+    <details open>
+      <summary>
+        <span class="method POST">POST</span>
+        <span class="path">/v1/news/delete</span>
+        <span class="summary-desc">Delete news</span>
+        <span class="badge-auth auth-yes">Auth Required</span>
+      </summary>
+      <div class="ep-body">
+        <div class="ep-section">
+          <div class="ep-label">Request Body</div>
+          <table><thead><tr><th>Field</th><th>Type</th><th>Required</th><th>Description</th></tr></thead><tbody>
+            <tr><td><code>newsId</code></td><td>Integer</td><td><span class="req">Yes</span></td><td>News ID to delete</td></tr>
+          </tbody></table>
+        </div>
+        <div class="ep-section">
+          <div class="ep-label">Response — <code>NewsRs</code></div>
+          <div class="response-box">{ "code": "S0000", "description": "...", "data": { ... } }</div>
+        </div>
+      </div>
+    </details>
+
+    <details open>
+      <summary>
+        <span class="method POST">POST</span>
+        <span class="path">/v1/send-noti/news</span>
+        <span class="summary-desc">Send FCM notification manually</span>
+        <span class="badge-auth auth-yes">Auth Required</span>
+      </summary>
+      <div class="ep-body">
+        <div class="ep-section">
+          <div class="ep-label">Request Body — <code>SendNotificationReq</code></div>
+          <table><thead><tr><th>Field</th><th>Type</th><th>Required</th><th>Description</th></tr></thead><tbody>
+            <tr><td><code>uid</code></td><td>String</td><td><span class="opt">No</span></td><td>User ID</td></tr>
+            <tr><td><code>device_token</code></td><td>String</td><td><span class="opt">No</span></td><td>FCM device token</td></tr>
+            <tr><td><code>title</code></td><td>String</td><td><span class="opt">No</span></td><td>Notification title</td></tr>
+            <tr><td><code>body</code></td><td>String</td><td><span class="opt">No</span></td><td>Notification body</td></tr>
+          </tbody></table>
+        </div>
+        <div class="ep-section">
+          <div class="ep-label">Response</div>
+          <div class="response-box">{ "code": "S0000", "description": "...", "data": "success" }</div>
+        </div>
+      </div>
+    </details>
+
+    <details open>
+      <summary>
+        <span class="method GET">GET</span>
+        <span class="path">/v1/news/preview/{id}</span>
+        <span class="summary-desc">Preview news image (binary)</span>
+        <span class="badge-auth auth-yes">Auth Required</span>
+      </summary>
+      <div class="ep-body">
+        <div class="ep-section">
+          <div class="ep-label">Path Parameters</div>
+          <table><thead><tr><th>Parameter</th><th>Type</th><th>Required</th><th>Description</th></tr></thead><tbody>
+            <tr><td><code>id</code></td><td>String</td><td><span class="req">Yes</span></td><td>News ID</td></tr>
+          </tbody></table>
+        </div>
+        <div class="ep-section">
+          <div class="ep-label">Response</div>
+          <div class="response-box">200 OK  →  image/png | image/jpeg | application/pdf  (raw bytes)</div>
+        </div>
+      </div>
+    </details>
+  </div>
+
+  <!-- ===== BANNERS ===== -->
+  <div class="section" id="banner">
+    <div class="section-title">Banners</div>
+
+    <details open>
+      <summary>
+        <span class="method POST">POST</span>
+        <span class="path">/v1/list-banner</span>
+        <span class="summary-desc">List all banners (paginated)</span>
+        <span class="badge-auth auth-yes">Auth Required</span>
+      </summary>
+      <div class="ep-body">
+        <div class="ep-section">
+          <div class="ep-label">Request Body — <code>BannerRq</code></div>
+          <table><thead><tr><th>Field</th><th>Type</th><th>Required</th><th>Description</th></tr></thead><tbody>
+            <tr><td><code>size</code></td><td>Integer</td><td><span class="opt">No</span></td><td>Page size</td></tr>
+            <tr><td><code>lastNum</code></td><td>Integer</td><td><span class="opt">No</span></td><td>Pagination offset</td></tr>
+            <tr><td><code>bannerName</code></td><td>String</td><td><span class="opt">No</span></td><td>Filter by name</td></tr>
+          </tbody></table>
+        </div>
+        <div class="ep-section">
+          <div class="ep-label">Response — <code>BannerRs</code></div>
+          <div class="response-box">{ "code": "S0000", "description": "...", "data": {
+  "totalData": 0, "size": 0, "lastNum": 0,
+  "bannerList": [ { ... } ], "countList": 0
+} }</div>
+        </div>
+      </div>
+    </details>
+
+    <details open>
+      <summary>
+        <span class="method POST">POST</span>
+        <span class="path">/v1/banner/add</span>
+        <span class="summary-desc">Create banner</span>
+        <span class="badge-auth auth-yes">Auth Required</span>
+      </summary>
+      <div class="ep-body">
+        <div class="ep-section">
+          <div class="ep-label">Request Body — <code>BannerRq</code></div>
+          <table><thead><tr><th>Field</th><th>Type</th><th>Required</th><th>Description</th></tr></thead><tbody>
+            <tr><td><code>bannerName</code></td><td>String</td><td><span class="opt">No</span></td><td>Banner name</td></tr>
+            <tr><td><code>bannerFileName</code></td><td>String</td><td><span class="opt">No</span></td><td>File name</td></tr>
+            <tr><td><code>bannerSeq</code></td><td>String</td><td><span class="opt">No</span></td><td>Display order</td></tr>
+            <tr><td><code>bannerFromFile</code></td><td>String</td><td><span class="opt">No</span></td><td>Base64 image</td></tr>
+          </tbody></table>
+        </div>
+        <div class="ep-section">
+          <div class="ep-label">Response — <code>BannerRs</code></div>
+          <div class="response-box">{ "code": "S0000", "description": "...", "data": { "bannerId": 0 } }</div>
+        </div>
+      </div>
+    </details>
+
+    <details open>
+      <summary>
+        <span class="method POST">POST</span>
+        <span class="path">/v1/banner/delete</span>
+        <span class="summary-desc">Delete banner</span>
+        <span class="badge-auth auth-yes">Auth Required</span>
+      </summary>
+      <div class="ep-body">
+        <div class="ep-section">
+          <div class="ep-label">Request Body</div>
+          <table><thead><tr><th>Field</th><th>Type</th><th>Required</th><th>Description</th></tr></thead><tbody>
+            <tr><td><code>bannerId</code></td><td>Integer</td><td><span class="req">Yes</span></td><td>Banner ID to delete</td></tr>
+          </tbody></table>
+        </div>
+        <div class="ep-section">
+          <div class="ep-label">Response — <code>BannerRs</code></div>
+          <div class="response-box">{ "code": "S0000", "description": "...", "data": { ... } }</div>
+        </div>
+      </div>
+    </details>
+
+    <details open>
+      <summary>
+        <span class="method GET">GET</span>
+        <span class="path">/v1/banner/preview/{id}</span>
+        <span class="summary-desc">Preview banner image (binary)</span>
+        <span class="badge-auth auth-yes">Auth Required</span>
+      </summary>
+      <div class="ep-body">
+        <div class="ep-section">
+          <div class="ep-label">Path Parameters</div>
+          <table><thead><tr><th>Parameter</th><th>Type</th><th>Required</th><th>Description</th></tr></thead><tbody>
+            <tr><td><code>id</code></td><td>String</td><td><span class="req">Yes</span></td><td>Banner ID</td></tr>
+          </tbody></table>
+        </div>
+        <div class="ep-section">
+          <div class="ep-label">Response</div>
+          <div class="response-box">200 OK  →  image/png | image/jpeg | application/pdf  (raw bytes)</div>
+        </div>
+      </div>
+    </details>
+  </div>
+
+  <!-- ===== FORMS ===== -->
+  <div class="section" id="form">
+    <div class="section-title">Forms / Documents</div>
+
+    <details open>
+      <summary>
+        <span class="method POST">POST</span>
+        <span class="path">/v1/list-form</span>
+        <span class="summary-desc">List all forms (paginated)</span>
+        <span class="badge-auth auth-yes">Auth Required</span>
+      </summary>
+      <div class="ep-body">
+        <div class="ep-section">
+          <div class="ep-label">Request Body — <code>FormRq</code></div>
+          <table><thead><tr><th>Field</th><th>Type</th><th>Required</th><th>Description</th></tr></thead><tbody>
+            <tr><td><code>size</code></td><td>Integer</td><td><span class="opt">No</span></td><td>Page size</td></tr>
+            <tr><td><code>lastNum</code></td><td>Integer</td><td><span class="opt">No</span></td><td>Pagination offset</td></tr>
+            <tr><td><code>formName</code></td><td>String</td><td><span class="opt">No</span></td><td>Filter by name</td></tr>
+          </tbody></table>
+        </div>
+        <div class="ep-section">
+          <div class="ep-label">Response — <code>FormRs</code></div>
+          <div class="response-box">{ "code": "S0000", "description": "...", "data": {
+  "totalData": 0, "size": 0, "lastNum": 0,
+  "formList": [ { ... } ], "countList": 0
+} }</div>
+        </div>
+      </div>
+    </details>
+
+    <details open>
+      <summary>
+        <span class="method GET">GET</span>
+        <span class="path">/v1/list-form/{id}</span>
+        <span class="summary-desc">Get form by ID</span>
+        <span class="badge-auth auth-yes">Auth Required</span>
+      </summary>
+      <div class="ep-body">
+        <div class="ep-section">
+          <div class="ep-label">Path Parameters</div>
+          <table><thead><tr><th>Parameter</th><th>Type</th><th>Required</th><th>Description</th></tr></thead><tbody>
+            <tr><td><code>id</code></td><td>String</td><td><span class="req">Yes</span></td><td>Form ID</td></tr>
+          </tbody></table>
+        </div>
+        <div class="ep-section">
+          <div class="ep-label">Response — <code>FormRs</code></div>
+          <div class="response-box">{ "code": "S0000", "description": "...", "data": { "formList": [ { ... } ] } }</div>
+        </div>
+      </div>
+    </details>
+
+    <details open>
+      <summary>
+        <span class="method POST">POST</span>
+        <span class="path">/v1/form/add</span>
+        <span class="summary-desc">Create form</span>
+        <span class="badge-auth auth-yes">Auth Required</span>
+      </summary>
+      <div class="ep-body">
+        <div class="ep-section">
+          <div class="ep-label">Request Body — <code>FormRq</code></div>
+          <table><thead><tr><th>Field</th><th>Type</th><th>Required</th><th>Description</th></tr></thead><tbody>
+            <tr><td><code>formName</code></td><td>String</td><td><span class="opt">No</span></td><td>Form name</td></tr>
+            <tr><td><code>fromFileId</code></td><td>String</td><td><span class="opt">No</span></td><td>File ID</td></tr>
+            <tr><td><code>formFileName</code></td><td>String</td><td><span class="opt">No</span></td><td>File name</td></tr>
+            <tr><td><code>formFile</code></td><td>String</td><td><span class="opt">No</span></td><td>Base64 PDF file</td></tr>
+          </tbody></table>
+        </div>
+        <div class="ep-section">
+          <div class="ep-label">Response — <code>FormRs</code></div>
+          <div class="response-box">{ "code": "S0000", "description": "...", "data": { "formId": 0 } }</div>
+        </div>
+      </div>
+    </details>
+
+    <details open>
+      <summary>
+        <span class="method POST">POST</span>
+        <span class="path">/v1/form/update</span>
+        <span class="summary-desc">Update form</span>
+        <span class="badge-auth auth-yes">Auth Required</span>
+      </summary>
+      <div class="ep-body">
+        <div class="ep-section">
+          <div class="ep-label">Request Body — <code>FormRq</code></div>
+          <p style="color:#64748b;font-size:12px;">Include <code>formId</code> plus fields to update.</p>
+        </div>
+        <div class="ep-section">
+          <div class="ep-label">Response — <code>FormRs</code></div>
+          <div class="response-box">{ "code": "S0000", "description": "...", "data": { ... } }</div>
+        </div>
+      </div>
+    </details>
+
+    <details open>
+      <summary>
+        <span class="method POST">POST</span>
+        <span class="path">/v1/form/delete</span>
+        <span class="summary-desc">Delete form</span>
+        <span class="badge-auth auth-yes">Auth Required</span>
+      </summary>
+      <div class="ep-body">
+        <div class="ep-section">
+          <div class="ep-label">Request Body</div>
+          <table><thead><tr><th>Field</th><th>Type</th><th>Required</th><th>Description</th></tr></thead><tbody>
+            <tr><td><code>formId</code></td><td>Integer</td><td><span class="req">Yes</span></td><td>Form ID to delete</td></tr>
+          </tbody></table>
+        </div>
+        <div class="ep-section">
+          <div class="ep-label">Response — <code>FormRs</code></div>
+          <div class="response-box">{ "code": "S0000", "description": "...", "data": { ... } }</div>
+        </div>
+      </div>
+    </details>
+
+    <details open>
+      <summary>
+        <span class="method GET">GET</span>
+        <span class="path">/v1/from-download</span>
+        <span class="summary-desc">Download form as PDF (binary)</span>
+        <span class="badge-auth auth-yes">Auth Required</span>
+      </summary>
+      <div class="ep-body">
+        <div class="ep-section">
+          <div class="ep-label">Query Parameters</div>
+          <table><thead><tr><th>Parameter</th><th>Type</th><th>Required</th><th>Description</th></tr></thead><tbody>
+            <tr><td><code>formId</code></td><td>String</td><td><span class="req">Yes</span></td><td>Form ID</td></tr>
+          </tbody></table>
+        </div>
+        <div class="ep-section">
+          <div class="ep-label">Response</div>
+          <div class="response-box">200 OK  →  application/pdf  (raw bytes)</div>
+        </div>
+      </div>
+    </details>
+  </div>
+
+  <!-- ===== VOUCHERS ===== -->
+  <div class="section" id="voucher">
+    <div class="section-title">Vouchers</div>
+
+    <details open>
+      <summary>
+        <span class="method POST">POST</span>
+        <span class="path">/v1/vouchers</span>
+        <span class="summary-desc">List all vouchers (paginated)</span>
+        <span class="badge-auth auth-yes">Auth Required</span>
+      </summary>
+      <div class="ep-body">
+        <div class="ep-section">
+          <div class="ep-label">Request Body — <code>VoucherRequest</code></div>
+          <table><thead><tr><th>Field</th><th>Type</th><th>Required</th><th>Description</th></tr></thead><tbody>
+            <tr><td><code>size</code></td><td>Integer</td><td><span class="opt">No</span></td><td>Page size</td></tr>
+            <tr><td><code>lastNum</code></td><td>Integer</td><td><span class="opt">No</span></td><td>Pagination offset</td></tr>
+            <tr><td><code>voucherTitle</code></td><td>String</td><td><span class="opt">No</span></td><td>Filter by title</td></tr>
+            <tr><td><code>voucherType</code></td><td>String</td><td><span class="opt">No</span></td><td>Filter by type</td></tr>
+          </tbody></table>
+        </div>
+        <div class="ep-section">
+          <div class="ep-label">Response — <code>VoucherResponse</code></div>
+          <div class="response-box">{ "code": "S0000", "description": "...", "data": {
+  "totalData": 0, "size": 0, "lastNum": 0,
+  "voucherList": [ { ... } ], "countList": 0
+} }</div>
+        </div>
+      </div>
+    </details>
+
+    <details open>
+      <summary>
+        <span class="method POST">POST</span>
+        <span class="path">/v1/vouchers/add</span>
+        <span class="summary-desc">Create voucher</span>
+        <span class="badge-auth auth-yes">Auth Required</span>
+      </summary>
+      <div class="ep-body">
+        <div class="ep-section">
+          <div class="ep-label">Request Body — <code>VoucherRequest</code></div>
+          <table><thead><tr><th>Field</th><th>Type</th><th>Required</th><th>Description</th></tr></thead><tbody>
+            <tr><td><code>voucherPicture</code></td><td>String</td><td><span class="opt">No</span></td><td>Base64 image</td></tr>
+            <tr><td><code>voucherTitle</code></td><td>String</td><td><span class="opt">No</span></td><td>Title</td></tr>
+            <tr><td><code>voucherDetails</code></td><td>String</td><td><span class="opt">No</span></td><td>Details</td></tr>
+            <tr><td><code>voucherQrcode</code></td><td>String</td><td><span class="opt">No</span></td><td>QR code data</td></tr>
+            <tr><td><code>voucherSmartseamanId</code></td><td>String</td><td><span class="opt">No</span></td><td>Smart Seaman ID</td></tr>
+            <tr><td><code>voucherType</code></td><td>String</td><td><span class="opt">No</span></td><td>Voucher type</td></tr>
+          </tbody></table>
+        </div>
+        <div class="ep-section">
+          <div class="ep-label">Response — <code>VoucherEntity</code></div>
+          <div class="response-box">{ "code": "S0000", "description": "...", "data": { ... } }</div>
+        </div>
+      </div>
+    </details>
+
+    <details open>
+      <summary>
+        <span class="method DELETE">DELETE</span>
+        <span class="path">/v1/vouchers/delete</span>
+        <span class="summary-desc">Delete voucher</span>
+        <span class="badge-auth auth-yes">Auth Required</span>
+      </summary>
+      <div class="ep-body">
+        <div class="ep-section">
+          <div class="ep-label">Query Parameters</div>
+          <table><thead><tr><th>Parameter</th><th>Type</th><th>Required</th><th>Description</th></tr></thead><tbody>
+            <tr><td><code>voucherId</code></td><td>String</td><td><span class="req">Yes</span></td><td>Voucher ID to delete</td></tr>
+          </tbody></table>
+        </div>
+        <div class="ep-section">
+          <div class="ep-label">Response — <code>VoucherEntity</code></div>
+          <div class="response-box">{ "code": "S0000", "description": "...", "data": { ... } }</div>
+        </div>
+      </div>
+    </details>
+
+    <details open>
+      <summary>
+        <span class="method GET">GET</span>
+        <span class="path">/v1/vouchers/detail/{id}</span>
+        <span class="summary-desc">Get voucher by ID</span>
+        <span class="badge-auth auth-yes">Auth Required</span>
+      </summary>
+      <div class="ep-body">
+        <div class="ep-section">
+          <div class="ep-label">Path Parameters</div>
+          <table><thead><tr><th>Parameter</th><th>Type</th><th>Required</th><th>Description</th></tr></thead><tbody>
+            <tr><td><code>id</code></td><td>String</td><td><span class="req">Yes</span></td><td>Voucher ID</td></tr>
+          </tbody></table>
+        </div>
+        <div class="ep-section">
+          <div class="ep-label">Response — <code>VoucherEntity</code></div>
+          <div class="response-box">{ "code": "S0000", "description": "...", "data": { ... } }</div>
+        </div>
+      </div>
+    </details>
+  </div>
+
+  <!-- ===== CERTIFICATIONS ===== -->
+  <div class="section" id="cert">
+    <div class="section-title">Certifications</div>
+
+    <details open>
+      <summary>
+        <span class="method POST">POST</span>
+        <span class="path">/v1/user-mobile/list</span>
+        <span class="summary-desc">List mobile users (for cert management)</span>
+        <span class="badge-auth auth-yes">Auth Required</span>
+      </summary>
+      <div class="ep-body">
+        <div class="ep-section">
+          <div class="ep-label">Request Body — <code>UserMobileRequest</code></div>
+          <table><thead><tr><th>Field</th><th>Type</th><th>Required</th><th>Description</th></tr></thead><tbody>
+            <tr><td><code>size</code></td><td>Integer</td><td><span class="opt">No</span></td><td>Page size</td></tr>
+            <tr><td><code>lastNum</code></td><td>Integer</td><td><span class="opt">No</span></td><td>Pagination offset</td></tr>
+            <tr><td><code>firstName</code></td><td>String</td><td><span class="opt">No</span></td><td>Filter by first name</td></tr>
+            <tr><td><code>lastName</code></td><td>String</td><td><span class="opt">No</span></td><td>Filter by last name</td></tr>
+            <tr><td><code>smartSeamanId</code></td><td>String</td><td><span class="opt">No</span></td><td>Filter by Smart Seaman ID</td></tr>
+          </tbody></table>
+        </div>
+        <div class="ep-section">
+          <div class="ep-label">Response — <code>UserModelResponse</code></div>
+          <div class="response-box">{ "code": "S0000", "description": "...", "data": {
+  "totalData": 0, "size": 0, "lastNum": 0,
+  "users": [ { ... } ], "countList": 0
+} }</div>
+        </div>
+      </div>
+    </details>
+
+    <details open>
+      <summary>
+        <span class="method POST">POST</span>
+        <span class="path">/v1/cert-type-cot</span>
+        <span class="summary-desc">List COT certifications for a user</span>
+        <span class="badge-auth auth-yes">Auth Required</span>
+      </summary>
+      <div class="ep-body">
+        <div class="ep-section">
+          <div class="ep-label">Request Body — <code>CertificationRequest</code></div>
+          <table><thead><tr><th>Field</th><th>Type</th><th>Required</th><th>Description</th></tr></thead><tbody>
+            <tr><td><code>size</code></td><td>Integer</td><td><span class="opt">No</span></td><td>Page size</td></tr>
+            <tr><td><code>lastNum</code></td><td>Integer</td><td><span class="opt">No</span></td><td>Pagination offset</td></tr>
+            <tr><td><code>mobileUserUuid</code></td><td>String</td><td><span class="opt">No</span></td><td>Mobile user UUID</td></tr>
+          </tbody></table>
+        </div>
+        <div class="ep-section">
+          <div class="ep-label">Response — <code>PageDocumentResponse</code></div>
+          <div class="response-box">{ "code": "S0000", "description": "...", "data": {
+  "totalData": 0, "size": 0, "lastNum": 0,
+  "documentEntityList": [ { ... } ]
+} }</div>
+        </div>
+      </div>
+    </details>
+
+    <details open>
+      <summary>
+        <span class="method POST">POST</span>
+        <span class="path">/v1/cert-type-document</span>
+        <span class="summary-desc">List Document-type certifications for a user</span>
+        <span class="badge-auth auth-yes">Auth Required</span>
+      </summary>
+      <div class="ep-body">
+        <div class="ep-section">
+          <div class="ep-label">Request Body — <code>CertificationRequest</code></div>
+          <p style="color:#64748b;font-size:12px;">Same shape as <code>/cert-type-cot</code>.</p>
+        </div>
+        <div class="ep-section">
+          <div class="ep-label">Response — <code>PageDocumentResponse</code></div>
+          <div class="response-box">{ "code": "S0000", "description": "...", "data": { "documentEntityList": [ { ... } ] } }</div>
+        </div>
+      </div>
+    </details>
+
+    <details open>
+      <summary>
+        <span class="method GET">GET</span>
+        <span class="path">/v1/cert-user-preview</span>
+        <span class="summary-desc">Preview certification image (binary)</span>
+        <span class="badge-auth auth-yes">Auth Required</span>
+      </summary>
+      <div class="ep-body">
+        <div class="ep-section">
+          <div class="ep-label">Query Parameters</div>
+          <table><thead><tr><th>Parameter</th><th>Type</th><th>Required</th><th>Description</th></tr></thead><tbody>
+            <tr><td><code>certCode</code></td><td>String</td><td><span class="req">Yes</span></td><td>Certificate code</td></tr>
+            <tr><td><code>mobileUserUuid</code></td><td>String</td><td><span class="req">Yes</span></td><td>Mobile user UUID</td></tr>
+          </tbody></table>
+        </div>
+        <div class="ep-section">
+          <div class="ep-label">Response</div>
+          <div class="response-box">200 OK  →  image/png | image/jpeg | application/pdf  (raw bytes)</div>
+        </div>
+      </div>
+    </details>
+
+    <details open>
+      <summary>
+        <span class="method POST">POST</span>
+        <span class="path">/v1/documents/certification/create</span>
+        <span class="summary-desc">Create certification document</span>
+        <span class="badge-auth auth-yes">Auth Required</span>
+      </summary>
+      <div class="ep-body">
+        <div class="ep-section">
+          <div class="ep-label">Request Body — <code>DocumentCreateRequest</code></div>
+          <table><thead><tr><th>Field</th><th>Type</th><th>Required</th><th>Description</th></tr></thead><tbody>
+            <tr><td><code>documentCode</code></td><td>String</td><td><span class="req">Yes</span></td><td>Document/certificate code</td></tr>
+            <tr><td><code>certStartDate</code></td><td>String</td><td><span class="req">Yes</span></td><td>Start date (yyyy-MM-dd)</td></tr>
+            <tr><td><code>certEndDateType</code></td><td>String</td><td><span class="req">Yes</span></td><td>End date type</td></tr>
+            <tr><td><code>certEndDate</code></td><td>String</td><td><span class="req">Yes</span></td><td>End date (yyyy-MM-dd); use <code>9999-99-99</code> for no expiry</td></tr>
+            <tr><td><code>fileCert</code></td><td>String</td><td><span class="opt">No</span></td><td>Base64 certificate file</td></tr>
+            <tr><td><code>fileCertName</code></td><td>String</td><td><span class="opt">No</span></td><td>File name</td></tr>
+            <tr><td><code>userMobileUuid</code></td><td>String</td><td><span class="req">Yes</span></td><td>Mobile user UUID</td></tr>
+          </tbody></table>
+        </div>
+        <div class="ep-section">
+          <div class="ep-label">Response — <code>DocumentCreateResponse</code></div>
+          <div class="response-box">{ "code": "S0000", "description": "...", "data": {
+  "documentCode": "string",
+  "certStartDate": "date",
+  "certEndDate": "date",
+  "certEndDateType": "string",
+  "fileCertName": "string",
+  "fileBase64": "string"
+} }</div>
+        </div>
+      </div>
+    </details>
+
+    <details open>
+      <summary>
+        <span class="method POST">POST</span>
+        <span class="path">/v1/documents/certification/update</span>
+        <span class="summary-desc">Update certification document</span>
+        <span class="badge-auth auth-yes">Auth Required</span>
+      </summary>
+      <div class="ep-body">
+        <div class="ep-section">
+          <div class="ep-label">Request Body — <code>DocumentUpdateRequest</code></div>
+          <table><thead><tr><th>Field</th><th>Type</th><th>Required</th><th>Description</th></tr></thead><tbody>
+            <tr><td><code>isChangeFile</code></td><td>String</td><td><span class="req">Yes</span></td><td>Whether the file is being replaced</td></tr>
+            <tr><td><code>documentCode</code></td><td>String</td><td><span class="req">Yes</span></td><td>Document/certificate code</td></tr>
+            <tr><td><code>certStartDate</code></td><td>String</td><td><span class="req">Yes</span></td><td>Start date (yyyy-MM-dd)</td></tr>
+            <tr><td><code>certEndDateType</code></td><td>String</td><td><span class="req">Yes</span></td><td>End date type</td></tr>
+            <tr><td><code>certEndDate</code></td><td>String</td><td><span class="req">Yes</span></td><td>End date; use <code>9999-99-99</code> for no expiry</td></tr>
+            <tr><td><code>fileCert</code></td><td>String</td><td><span class="opt">No</span></td><td>Base64 certificate file</td></tr>
+            <tr><td><code>fileCertName</code></td><td>String</td><td><span class="opt">No</span></td><td>File name</td></tr>
+            <tr><td><code>userMobileUuid</code></td><td>String</td><td><span class="req">Yes</span></td><td>Mobile user UUID</td></tr>
+          </tbody></table>
+        </div>
+        <div class="ep-section">
+          <div class="ep-label">Response — <code>DocumentCreateResponse</code></div>
+          <div class="response-box">{ "code": "S0000", "description": "...", "data": { ... } }</div>
+        </div>
+      </div>
+    </details>
+
+    <details open>
+      <summary>
+        <span class="method DELETE">DELETE</span>
+        <span class="path">/v1/documents/certification/delete</span>
+        <span class="summary-desc">Delete certification document</span>
+        <span class="badge-auth auth-yes">Auth Required</span>
+      </summary>
+      <div class="ep-body">
+        <div class="ep-section">
+          <div class="ep-label">Query Parameters</div>
+          <table><thead><tr><th>Parameter</th><th>Type</th><th>Required</th><th>Description</th></tr></thead><tbody>
+            <tr><td><code>certCode</code></td><td>String</td><td><span class="req">Yes</span></td><td>Certificate code</td></tr>
+            <tr><td><code>uUid</code></td><td>String</td><td><span class="req">Yes</span></td><td>Mobile user UUID</td></tr>
+          </tbody></table>
+        </div>
+        <div class="ep-section">
+          <div class="ep-label">Response — <code>DocumentCreateResponse</code></div>
+          <div class="response-box">{ "code": "S0000", "description": "...", "data": { ... } }</div>
+        </div>
+      </div>
+    </details>
+
+    <details open>
+      <summary>
+        <span class="method GET">GET</span>
+        <span class="path">/v1/documents/certification/edit</span>
+        <span class="summary-desc">Get certification document for editing</span>
+        <span class="badge-auth auth-yes">Auth Required</span>
+      </summary>
+      <div class="ep-body">
+        <div class="ep-section">
+          <div class="ep-label">Query Parameters</div>
+          <table><thead><tr><th>Parameter</th><th>Type</th><th>Required</th><th>Description</th></tr></thead><tbody>
+            <tr><td><code>certCode</code></td><td>String</td><td><span class="req">Yes</span></td><td>Certificate code</td></tr>
+            <tr><td><code>uUid</code></td><td>String</td><td><span class="req">Yes</span></td><td>Mobile user UUID</td></tr>
+          </tbody></table>
+        </div>
+        <div class="ep-section">
+          <div class="ep-label">Response — <code>DocumentCreateResponse</code></div>
+          <div class="response-box">{ "code": "S0000", "description": "...", "data": {
+  "documentCode": "string", "certStartDate": "date",
+  "certEndDate": "date", "certEndDateType": "string",
+  "fileCertName": "string", "fileBase64": "string"
+} }</div>
+        </div>
+      </div>
+    </details>
+  </div>
+
+  <!-- ===== DASHBOARD ===== -->
+  <div class="section" id="dashboard">
+    <div class="section-title">Dashboard &amp; Mobile Users</div>
+
+    <details open>
+      <summary>
+        <span class="method GET">GET</span>
+        <span class="path">/v1/get-all-user</span>
+        <span class="summary-desc">Total count of all mobile users</span>
+        <span class="badge-auth auth-yes">Auth Required</span>
+      </summary>
+      <div class="ep-body">
+        <div class="ep-section">
+          <div class="ep-label">Response — <code>MobileUserRs</code></div>
+          <div class="response-box">{ "code": "S0000", "description": "...", "data": { "count": 0 } }</div>
+        </div>
+      </div>
+    </details>
+
+    <details open>
+      <summary>
+        <span class="method GET">GET</span>
+        <span class="path">/v1/get-less-three</span>
+        <span class="summary-desc">Users with certifications expiring in &lt;3 months</span>
+        <span class="badge-auth auth-yes">Auth Required</span>
+      </summary>
+      <div class="ep-body">
+        <div class="ep-section">
+          <div class="ep-label">Response — <code>MobileUserRs</code></div>
+          <div class="response-box">{ "code": "S0000", "description": "...", "data": {
+  "count": 0, "certId": 0, "smartSeamanId": "string",
+  "firstName": "string", "lastName": "string", "days": 0
+} }</div>
+        </div>
+      </div>
+    </details>
+
+    <details open>
+      <summary>
+        <span class="method GET">GET</span>
+        <span class="path">/v1/get-less-six</span>
+        <span class="summary-desc">Users with certifications expiring in &lt;6 months</span>
+        <span class="badge-auth auth-yes">Auth Required</span>
+      </summary>
+      <div class="ep-body">
+        <div class="ep-section">
+          <div class="ep-label">Response — <code>MobileUserRs</code></div>
+          <div class="response-box">{ "code": "S0000", "description": "...", "data": { "count": 0, "days": 0 } }</div>
+        </div>
+      </div>
+    </details>
+
+    <details open>
+      <summary>
+        <span class="method GET">GET</span>
+        <span class="path">/v1/get-less-year</span>
+        <span class="summary-desc">Users with certifications expiring in &lt;1 year</span>
+        <span class="badge-auth auth-yes">Auth Required</span>
+      </summary>
+      <div class="ep-body">
+        <div class="ep-section">
+          <div class="ep-label">Response — <code>MobileUserRs</code></div>
+          <div class="response-box">{ "code": "S0000", "description": "...", "data": { "count": 0, "days": 0 } }</div>
+        </div>
+      </div>
+    </details>
+
+    <details open>
+      <summary>
+        <span class="method POST">POST</span>
+        <span class="path">/v1/list-mobile-user/{id}</span>
+        <span class="summary-desc">List mobile users with summary for a category</span>
+        <span class="badge-auth auth-yes">Auth Required</span>
+      </summary>
+      <div class="ep-body">
+        <div class="ep-section">
+          <div class="ep-label">Path Parameters</div>
+          <table><thead><tr><th>Parameter</th><th>Type</th><th>Required</th><th>Description</th></tr></thead><tbody>
+            <tr><td><code>id</code></td><td>String</td><td><span class="req">Yes</span></td><td>Category ID (e.g. expiry bucket)</td></tr>
+          </tbody></table>
+        </div>
+        <div class="ep-section">
+          <div class="ep-label">Request Body — <code>DashboardRequest</code></div>
+          <table><thead><tr><th>Field</th><th>Type</th><th>Required</th><th>Description</th></tr></thead><tbody>
+            <tr><td><code>size</code></td><td>Integer</td><td><span class="opt">No</span></td><td>Page size</td></tr>
+            <tr><td><code>lastNum</code></td><td>Integer</td><td><span class="opt">No</span></td><td>Pagination offset</td></tr>
+          </tbody></table>
+        </div>
+        <div class="ep-section">
+          <div class="ep-label">Response — <code>MobileUserRs</code></div>
+          <div class="response-box">{ "code": "S0000", "description": "...", "data": {
+  "count": 0, "smartSeamanId": "string", "firstName": "string",
+  "lastName": "string", "companyNameEn": "string",
+  "certEndDate": "string", "days": 0
+} }</div>
+        </div>
+      </div>
+    </details>
+
+    <details open>
+      <summary>
+        <span class="method GET">GET</span>
+        <span class="path">/v1/user-mobile/profile</span>
+        <span class="summary-desc">Get mobile user profile</span>
+        <span class="badge-auth auth-yes">Auth Required</span>
+      </summary>
+      <div class="ep-body">
+        <div class="ep-section">
+          <div class="ep-label">Query Parameters</div>
+          <table><thead><tr><th>Parameter</th><th>Type</th><th>Required</th><th>Description</th></tr></thead><tbody>
+            <tr><td><code>mobileUUID</code></td><td>String</td><td><span class="req">Yes</span></td><td>Mobile user UUID</td></tr>
+          </tbody></table>
+        </div>
+        <div class="ep-section">
+          <div class="ep-label">Response — <code>ProfileResponse</code></div>
+          <div class="response-box">{ "code": "S0000", "description": "...", "data": {
+  "firstName": "string", "lastName": "string",
+  "dateOfBirth": "string", "age": "string",
+  "mobile": "string", "email": "string",
+  "companyCode": "string", "companyDescription": "string",
+  "positionCode": "string", "positionDescription": "string",
+  "smartSeamanId": "string", "shortName": "string"
+} }</div>
+        </div>
+      </div>
+    </details>
+
+    <details open>
+      <summary>
+        <span class="method GET">GET</span>
+        <span class="path">/v1/user-mobile/profile/image</span>
+        <span class="summary-desc">Get mobile user profile picture (binary)</span>
+        <span class="badge-auth auth-yes">Auth Required</span>
+      </summary>
+      <div class="ep-body">
+        <div class="ep-section">
+          <div class="ep-label">Query Parameters</div>
+          <table><thead><tr><th>Parameter</th><th>Type</th><th>Required</th><th>Description</th></tr></thead><tbody>
+            <tr><td><code>mobileUUID</code></td><td>String</td><td><span class="req">Yes</span></td><td>Mobile user UUID</td></tr>
+          </tbody></table>
+        </div>
+        <div class="ep-section">
+          <div class="ep-label">Response</div>
+          <div class="response-box">200 OK  →  image/png  (raw bytes)</div>
+        </div>
+      </div>
+    </details>
+
+    <details open>
+      <summary>
+        <span class="method GET">GET</span>
+        <span class="path">/v1/smartseaman-code-list</span>
+        <span class="summary-desc">Search Smart Seaman codes</span>
+        <span class="badge-auth auth-yes">Auth Required</span>
+      </summary>
+      <div class="ep-body">
+        <div class="ep-section">
+          <div class="ep-label">Query Parameters</div>
+          <table><thead><tr><th>Parameter</th><th>Type</th><th>Required</th><th>Description</th></tr></thead><tbody>
+            <tr><td><code>search</code></td><td>String</td><td><span class="opt">No</span></td><td>Search keyword</td></tr>
+          </tbody></table>
+        </div>
+        <div class="ep-section">
+          <div class="ep-label">Response — <code>SmartManCodeResponse</code></div>
+          <div class="response-box">{ "code": "S0000", "description": "...", "data": {
+  "smartseamanId": "string",
+  "fullName": "string"
+} }</div>
+        </div>
+      </div>
+    </details>
+  </div>
+
+  <div style="text-align:center;color:#94a3b8;font-size:12px;padding:32px 0;border-top:1px solid #e2e8f0;margin-top:16px;">
+    Smart Seaman BOS API &mdash; Generated 2026-06-14 &mdash; 72 endpoints across 13 resource groups
+  </div>
+</main>
+
+</body>
+</html>
