@@ -43,15 +43,12 @@ public class DocumentRepository  extends CommonRepository {
 
     public List<FormEntity> listAllForm(Integer start, Integer row ) {
         List<FormEntity> listAll = null;
-        String sql= SELECT_ALL_FORM;
         try {
             MapSqlParameterSource namedParameters = new MapSqlParameterSource()
                     .addValue("START", start)
                     .addValue("ROW",row);
 
-            log.info("sql-list-form:" + SELECT_ALL_FORM);
             listAll = template.query(SELECT_ALL_FORM, namedParameters, new BeanPropertyRowMapper(FormEntity.class));
-            log.info("Init list all Form." + listAll);
         } catch (Exception ex) {
             log.error("{}", ex.getMessage());
             throw new BusinessException(AppStatus.EXCEPTION_DATABASE, ex.getMessage());
@@ -122,7 +119,6 @@ public class DocumentRepository  extends CommonRepository {
             }else{
                 throw new BusinessException(AppStatus.EXCEPTION_DATABASE, "{formId} does not exist");
             }
-            log.info("Init list list Form by ID. Result ID -> {}", result.getFormId());
         } catch (Exception ex) {
             log.error("{}", ex.getMessage());
             throw new BusinessException(AppStatus.EXCEPTION_DATABASE, ex.getMessage());

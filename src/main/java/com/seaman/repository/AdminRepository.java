@@ -10,7 +10,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.jdbc.core.BeanPropertyRowMapper;
 import org.springframework.jdbc.core.namedparam.MapSqlParameterSource;
-import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Repository;
 
 import java.util.Date;
@@ -20,7 +19,6 @@ import java.util.List;
 @RequiredArgsConstructor
 public class AdminRepository extends CommonRepository {
 
-    private final PasswordEncoder passwordEncoder;
 
     private static final String FIND_BY_ID = "select * from m_admin_users where admin_user_id = :ID ";
 

@@ -1,16 +1,13 @@
 package com.seaman.service;
 
 import com.amazonaws.services.s3.AmazonS3;
-import com.google.gson.Gson;
 import com.seaman.constant.AppStatus;
 import com.seaman.constant.AppSys;
 import com.seaman.entity.AdminUserEntity;
-import com.seaman.entity.NewsEntity;
 import com.seaman.entity.SessionEntity;
 import com.seaman.entity.UsersEntity;
 import com.seaman.exception.BusinessException;
 import com.seaman.exception.CommonException;
-import com.seaman.model.common.ErrorMessage;
 import com.seaman.model.request.AdminRequest;
 import com.seaman.model.request.UpdatePasswordRequest;
 import com.seaman.model.response.AdminResponse;
@@ -77,12 +74,9 @@ public class AdminService {
             transactionLogsService.insert(transId, bodyReqJson, serviceName, usersEntity.getUsername());
 
             // -- 1. find username in table, And check password
-            Optional<AdminUserEntity> adminEntityOptional = Optional.ofNullable(adminRepository.findById(adminRequest.getAdminUserId()));
-
 
             // -- 2. Generate JWT
             // Ref : https://www.rfc-editor.org/rfc/rfc7519#section-4.1
-            String sessionId = frameworkUtils.generateUUID();
             String clientSessionId = frameworkUtils.generateUUID();
             Map<String, Object> claims = new HashMap<>();
             claims.put(AppSys.CLAIMS_ISSUER, AppSys.APPLICATION_NAME);

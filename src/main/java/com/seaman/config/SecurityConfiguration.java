@@ -19,7 +19,6 @@ import org.springframework.security.web.header.writers.StaticHeadersWriter;
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 
-import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
@@ -100,4 +99,3 @@ public class SecurityConfiguration extends WebSecurityConfigurerAdapter {
         return new CustomAuthenticationEntryPoint();
     }
 }
-

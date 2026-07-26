@@ -10,9 +10,6 @@ import com.seaman.model.response.*;
 import com.seaman.service.AdminService;
 import com.seaman.service.MessageCodeService;
 import lombok.RequiredArgsConstructor;
-import net.sf.jmimemagic.*;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.http.*;
 import org.springframework.web.bind.annotation.*;
 import javax.servlet.http.HttpServletRequest;
@@ -24,8 +21,6 @@ import static org.springframework.http.ResponseEntity.ok;
 @RestController
 @RequiredArgsConstructor
 public class AdminController extends BaseController {
-
-    private final Logger log = LoggerFactory.getLogger(this.getClass());
 
     private final AdminService adminService;
 

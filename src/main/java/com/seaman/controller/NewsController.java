@@ -125,7 +125,6 @@ public class NewsController extends BaseController {
 
         String description = messageCodeService.getMessageDescription(AppStatus.SUCCESS_CODE, (String) httpServletRequest.getAttribute(AppSys.LANGUAGE));
 
-//         sendNotificationService.senderFcmNews(AppSys.NOTI_TYPE_NEWS_GENERAL,"24",  "แจ้งเตื่อน !", "Test send noti form space.");
         sendNotificationService.sendNotificationManual(req);
         return ok(SuccessResponse.builder(
                 AppStatus.SUCCESS_CODE,

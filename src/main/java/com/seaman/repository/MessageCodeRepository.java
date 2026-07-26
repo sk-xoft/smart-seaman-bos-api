@@ -1,12 +1,10 @@
 package com.seaman.repository;
 
 import com.seaman.constant.AppStatus;
-import com.seaman.constant.BusinessConstant;
 import com.seaman.entity.MessageCodeEntity;
 import com.seaman.exception.BusinessException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.cache.annotation.Cacheable;
 import org.springframework.jdbc.core.BeanPropertyRowMapper;
 import org.springframework.jdbc.core.namedparam.MapSqlParameterSource;
 import org.springframework.stereotype.Repository;
@@ -17,7 +15,6 @@ import java.util.List;
 public class MessageCodeRepository extends CommonRepository {
 
     private final Logger log = LoggerFactory.getLogger(this.getClass());
-
     private static final String SELECT_ALL = "select * from m_message_code";
 
     public List<MessageCodeEntity> findAll() {

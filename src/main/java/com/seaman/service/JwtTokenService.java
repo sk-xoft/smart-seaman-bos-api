@@ -1,6 +1,5 @@
 package com.seaman.service;
 
-import com.seaman.constant.AppStatus;
 import com.seaman.exception.BusinessException;
 import io.jsonwebtoken.*;
 import lombok.RequiredArgsConstructor;

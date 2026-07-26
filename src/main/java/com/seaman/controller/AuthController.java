@@ -7,7 +7,6 @@ import com.seaman.model.common.SuccessResponse;
 import com.seaman.model.request.LoginRequest;
 import com.seaman.model.request.RegisterRequest;
 import com.seaman.model.response.LoginResponse;
-import com.seaman.model.response.RefreshTokenResponse;
 import com.seaman.model.response.RegisterResponse;
 import com.seaman.model.response.UserAdminProfileResponse;
 import com.seaman.service.AuthService;
@@ -27,8 +26,6 @@ import static org.springframework.http.ResponseEntity.ok;
 @RestController
 @RequiredArgsConstructor
 public class AuthController extends BaseController {
-
-    private final Logger log = LoggerFactory.getLogger(this.getClass());
 
     private final AuthService authService;
 

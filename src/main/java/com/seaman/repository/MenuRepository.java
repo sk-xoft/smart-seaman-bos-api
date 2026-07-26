@@ -111,7 +111,7 @@ public class MenuRepository  extends CommonRepository {
                     .addValue("GROUPID", groupId);
             listAll = template.query(LIST_PERMISSION, namedParameters, new BeanPropertyRowMapper(MenuPermission.class));
             logger.info("get menu permission code from db");
-            //logger.info("listAll: "+ listAll);
+
         } catch (Exception ex) {
             logger.error("{}", ex.getMessage());
             throw new BusinessException(AppStatus.EXCEPTION_DATABASE, ex.getMessage());
