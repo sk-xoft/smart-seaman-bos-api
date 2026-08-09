@@ -1,0 +1,867 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<title>Smart Seaman — จัดการคำขอต่อเอกสาร</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/tabler-icons.min.css">
+<link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Sarabun',sans-serif;background:#0d1117;min-height:100vh}
+.topbar{background:#111827;height:50px;display:flex;align-items:center;justify-content:space-between;padding:0 24px;border-bottom:1px solid #1e293b;position:sticky;top:0;z-index:50}
+.layout{display:flex;min-height:calc(100vh - 50px)}
+.sb{width:230px;min-width:230px;background:#111827;border-right:1px solid #1e293b;flex-shrink:0}
+.sb-user{padding:14px 16px 12px;display:flex;flex-direction:column;align-items:center;gap:3px;border-bottom:1px solid #1e293b;margin-bottom:6px}
+.nav-item{display:flex;align-items:center;gap:10px;padding:8px 18px;color:#d1d5db;font-size:13px;cursor:pointer}
+.nav-item:hover{background:#1e293b}
+.nav-item.active{background:#f97316;color:#fff;margin:2px 10px;border-radius:6px;padding:8px 10px}
+.nav-item.active i{color:#fff!important}
+.sb-grp{padding:10px 0 3px 18px;font-size:10px;color:#f97316;font-weight:700;letter-spacing:.5px}
+.main{flex:1;background:#131922;min-width:0;overflow-y:auto;height:calc(100vh - 50px)}
+.content{padding:20px 28px 40px}
+.page{display:none}.page.on{display:block}
+.card{background:#1a2332;border-radius:8px;padding:20px 24px;margin-bottom:16px}
+.profile-row{display:flex;padding:6px 0;border-bottom:1px solid #1e293b}
+.profile-row:last-child{border-bottom:none}
+.profile-lbl{width:130px;flex-shrink:0;color:#9ca3af;font-size:13px}
+.profile-val{color:#e2e8f0;font-size:13px}
+/* stepper */
+.stepper{display:flex;align-items:center;width:100%}
+.step{display:flex;flex-direction:column;align-items:center;gap:7px;flex-shrink:0}
+.step-circle{width:34px;height:34px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:600}
+.sc-active{background:#f97316;color:#fff}
+.sc-done{background:#16a34a;color:#fff}
+.sc-pending{background:transparent;color:#6b7280;border:1.5px solid #374151}
+.step-lbl{font-size:11px;color:#6b7280;white-space:nowrap;text-align:center;line-height:1.3}
+.sl-active{color:#f97316;font-weight:600}
+.sl-done{color:#4ade80}
+.step-dash{flex:1;border:none;border-top:2px dashed #374151;margin-bottom:22px}
+.sd-done{border-top-color:#16a34a}
+/* tabs */
+.tabs{display:flex;gap:0;border-bottom:1px solid #2d3748;margin-bottom:16px}
+.tab{padding:8px 20px;font-size:13px;color:#9ca3af;cursor:pointer;border-bottom:2px solid transparent;margin-bottom:-1px;white-space:nowrap}
+.tab.on{color:#f97316;border-bottom-color:#f97316;font-weight:600}
+/* table */
+table{width:100%;border-collapse:collapse;font-size:13px;table-layout:fixed}
+th{padding:10px 12px;color:#9ca3af;font-weight:500;text-align:left;background:#111c2b;border-bottom:1px solid #2a3a4a;font-size:12px;white-space:nowrap}
+td{padding:11px 12px;border-bottom:1px solid #1e293b;color:#d1d5db;vertical-align:middle}
+tbody tr.clickable{cursor:pointer}
+tbody tr.clickable:hover td{background:#1a2840}
+/* buttons */
+.btn-o{background:#f97316;border:none;border-radius:6px;padding:0 20px;color:#fff;font-size:13px;font-weight:500;cursor:pointer;display:inline-flex;align-items:center;gap:7px;height:40px;font-family:'Sarabun',sans-serif;white-space:nowrap}
+.btn-o:disabled{opacity:.35;cursor:not-allowed}
+.btn-g{background:transparent;border:1px solid #f97316;border-radius:6px;padding:0 20px;color:#f97316;font-size:13px;font-weight:500;cursor:pointer;display:inline-flex;align-items:center;gap:7px;height:40px;font-family:'Sarabun',sans-serif;white-space:nowrap}
+.btn-g:disabled{border-color:#4b5563;color:#4b5563;cursor:not-allowed}
+.btn-ghost{background:transparent;border:1px solid #4b5563;border-radius:6px;padding:0 20px;color:#9ca3af;font-size:13px;cursor:pointer;display:inline-flex;align-items:center;gap:7px;height:40px;font-family:'Sarabun',sans-serif;white-space:nowrap}
+.btn-d{background:transparent;border:1px solid #ef4444;border-radius:6px;padding:0 20px;color:#ef4444;font-size:13px;cursor:pointer;display:inline-flex;align-items:center;gap:7px;height:40px;font-family:'Sarabun',sans-serif;white-space:nowrap}
+.btn-icon{background:#f97316;border:none;border-radius:6px;padding:7px 9px;color:#fff;cursor:pointer;display:inline-flex;align-items:center;justify-content:center}
+.btn-icon:disabled{opacity:.45;cursor:not-allowed}
+.copy-btn{background:transparent;border:1px solid #2a3a4a;border-radius:4px;padding:3px 7px;color:#9ca3af;cursor:pointer;font-size:11px;display:inline-flex;align-items:center;gap:4px;font-family:'Sarabun',sans-serif}
+.tab-btn{background:transparent;border:1px solid #2a3a4a;border-radius:5px;padding:6px 14px;color:#9ca3af;font-size:13px;cursor:pointer;font-family:'Sarabun',sans-serif;white-space:nowrap}
+.tab-btn.on{background:#f97316;border-color:#f97316;color:#fff}
+/* inputs */
+.fi{background:#0d1520;border:1px solid #2a3a4a;border-radius:5px;padding:7px 10px;color:#e2e8f0;font-size:13px;font-family:'Sarabun',sans-serif;outline:none;width:100%;height:40px}
+.fi::placeholder{color:#374151}
+.fi:focus{border-color:#f97316}
+.date-wrap{background:#0d1520;border:1px solid #2a3a4a;border-radius:5px;padding:0 10px;height:40px;display:flex;align-items:center;justify-content:space-between;cursor:pointer;position:relative;width:100%}
+.date-wrap input[type=date]{position:absolute;inset:0;opacity:0;cursor:pointer;width:100%;height:100%}
+.date-ph{color:#374151;font-size:13px}.date-vl{color:#e2e8f0;font-size:13px}
+.result-select{background:#0d1520;border:1px solid #2a3a4a;border-radius:5px;padding:5px 8px;font-size:12px;font-family:'Sarabun',sans-serif;outline:none;cursor:pointer;width:100%}
+.rs-pass{color:#00bf63}.rs-fix{color:#ff0000}.rs-def{color:#f97316}
+.note-input{background:#0d1520;border:1px solid #2a3a4a;border-radius:5px;padding:5px 8px;font-size:12px;font-family:'Sarabun',sans-serif;outline:none;width:100%}
+.note-input::placeholder{color:#374151}
+/* info rows */
+.ir{display:flex;padding:8px 0;border-bottom:1px solid #1e293b;align-items:flex-start}
+.ir:last-child{border-bottom:none}
+.il{width:160px;flex-shrink:0;color:#9ca3af;font-size:13px}
+.iv{color:#e2e8f0;font-size:13px}
+.req{color:#ef4444;margin-left:2px}
+.fl{font-size:12px;color:#9ca3af;margin-bottom:5px}
+/* tracking */
+.track-item{display:flex;gap:14px;padding-bottom:20px}
+.track-item:last-child{padding-bottom:0}
+.track-dot-col{display:flex;flex-direction:column;align-items:center;flex-shrink:0;width:20px}
+.track-dot{width:12px;height:12px;border-radius:50%;flex-shrink:0;margin-top:3px}
+.td-cur{background:#21e5f8;box-shadow:0 0 0 3px rgba(33,229,248,.2)}
+.td-done{background:#00bf63}
+.track-line{flex:1;width:2px;background:#00bf63;margin-top:4px}
+.track-time{font-size:11px;color:#6b7280;white-space:nowrap;width:130px;flex-shrink:0;padding-top:2px}
+.track-status{font-size:13px;font-weight:600;margin-bottom:2px}
+.ts-cur{color:#21e5f8}.ts-done{color:#00bf63}
+.track-loc{font-size:12px;color:#6b7280}
+/* modal */
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.6);display:flex;align-items:center;justify-content:center;z-index:100}
+.modal{background:#1a2332;border-radius:12px;padding:28px;width:480px;border:1px solid #2d3748;max-height:90vh;overflow-y:auto}
+.modal-icon{width:52px;height:52px;border-radius:50%;display:flex;align-items:center;justify-content:center;margin:0 auto 16px;font-size:24px}
+.mi-warn{background:#451a03;color:#f97316}.mi-danger{background:#2d1515;color:#ef4444}
+.modal-title{color:#fff;font-size:18px;font-weight:600;margin-bottom:10px;text-align:center}
+.modal-body{color:#9ca3af;font-size:13px;line-height:1.7;margin-bottom:20px;text-align:center}
+.hl{color:#f97316;font-weight:600}
+.modal-actions{display:flex;gap:10px;justify-content:center}
+.btn-mc{background:transparent;border:1px solid #4b5563;border-radius:6px;padding:0 24px;color:#9ca3af;font-size:13px;cursor:pointer;height:40px;font-family:'Sarabun',sans-serif}
+.btn-mok{background:#f97316;border:none;border-radius:6px;padding:0 24px;color:#fff;font-size:13px;font-weight:600;cursor:pointer;height:40px;font-family:'Sarabun',sans-serif}
+.btn-mdanger{background:#ef4444;border:none;border-radius:6px;padding:0 24px;color:#fff;font-size:13px;font-weight:600;cursor:pointer;height:40px;font-family:'Sarabun',sans-serif}
+.foot{background:#111827;border-top:1px solid #1e293b;padding:10px 24px;font-size:11px;color:#4b5563;display:flex;justify-content:space-between}
+/* toast */
+.toast{position:fixed;bottom:28px;right:28px;border-radius:8px;font-size:13px;font-family:'Sarabun',sans-serif;display:flex;align-items:center;gap:8px;z-index:200;box-shadow:0 4px 16px rgba(0,0,0,.3);padding:12px 20px;color:#fff;transition:opacity .3s}
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <div style="display:flex;align-items:center;gap:16px">
+    <span style="color:#f97316;font-size:22px"><i class="ti ti-menu-2"></i></span>
+    <span style="color:#fff;font-weight:700;font-size:16px">Smart <span style="color:#f97316">Seaman</span></span>
+  </div>
+  <span style="color:#f97316;font-size:13px;display:flex;align-items:center;gap:6px;cursor:pointer"><i class="ti ti-logout" style="font-size:15px"></i> ออกจากระบบ</span>
+</div>
+
+<div class="layout">
+  <div class="sb">
+    <div class="sb-user">
+      <div style="width:46px;height:46px;border-radius:50%;background:#f97316;color:#fff;font-weight:700;font-size:17px;display:flex;align-items:center;justify-content:center">AS</div>
+      <div style="color:#f97316;font-size:12px;font-weight:500;margin-top:5px">superadmin02</div>
+      <div style="color:#9ca3af;font-size:11px">Super Admin</div>
+    </div>
+    <div class="sb-grp">Operation</div>
+    <div class="nav-item"><i class="ti ti-home" style="font-size:16px;color:#9ca3af"></i> แดชบอร์ด</div>
+    <div class="nav-item"><i class="ti ti-certificate" style="font-size:16px;color:#9ca3af"></i> จัดการประกาศนียบัตร</div>
+    <div class="nav-item active"><i class="ti ti-file-description" style="font-size:16px"></i> จัดการคำขอต่อเอกสาร</div>
+    <div class="nav-item"><i class="ti ti-school" style="font-size:16px;color:#9ca3af"></i> คอร์สอบรม</div>
+    <div class="nav-item"><i class="ti ti-speakerphone" style="font-size:16px;color:#9ca3af"></i> ข่าวสาร</div>
+    <div class="sb-grp">System</div>
+    <div class="nav-item"><i class="ti ti-settings" style="font-size:16px;color:#9ca3af"></i> ตั้งค่าระบบ</div>
+  </div>
+
+  <div class="main" id="main-scroll">
+    <!-- LIST PAGE -->
+    <div class="page on" id="page-list">
+      <div class="content">
+        <div style="color:#fff;font-size:20px;font-weight:600;margin-bottom:4px">จัดการคำขอต่อเอกสาร</div>
+        <div style="font-size:12px;color:#6b7280;margin-bottom:18px">หน้าหลัก / <span style="color:#f97316">จัดการคำขอต่อเอกสาร</span></div>
+        <div class="card" style="margin-bottom:16px">
+          <div style="color:#fff;font-size:15px;font-weight:600;margin-bottom:14px">เงื่อนไขในการค้นหา</div>
+          <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px;margin-bottom:14px">
+            <div><div style="font-size:12px;color:#9ca3af;margin-bottom:6px">Smart Seaman ID</div><input class="fi" placeholder="Smart Seaman ID"></div>
+            <div><div style="font-size:12px;color:#9ca3af;margin-bottom:6px">ชื่อ</div><input class="fi" placeholder="ชื่อ"></div>
+            <div><div style="font-size:12px;color:#9ca3af;margin-bottom:6px">Request No.</div><input class="fi" placeholder="เช่น 2505001"></div>
+          </div>
+          <div style="display:flex;justify-content:flex-end"><button class="btn-o"><i class="ti ti-search" style="font-size:15px"></i> ค้นหา</button></div>
+        </div>
+        <div class="card">
+          <div style="display:flex;gap:8px;margin-bottom:16px;flex-wrap:nowrap;overflow-x:auto" id="list-tab-bar">
+            <button class="tab-btn on" data-s="all">ทั้งหมด (8)</button>
+            <button class="tab-btn" data-s="รอตรวจเอกสาร">รอตรวจเอกสาร (2)</button>
+            <button class="tab-btn" data-s="รอผู้ยื่นแก้ไข">รอผู้ยื่นแก้ไข (1)</button>
+            <button class="tab-btn" data-s="รอผลกรมเจ้าท่า">รอผลกรมเจ้าท่า (1)</button>
+            <button class="tab-btn" data-s="รอรับเอกสารจากกรม">รอรับเอกสารจากกรม (1)</button>
+            <button class="tab-btn" data-s="กำลังจัดส่ง">กำลังจัดส่ง (1)</button>
+            <button class="tab-btn" data-s="จัดส่งสำเร็จ">จัดส่งสำเร็จ (1)</button>
+            <button class="tab-btn" data-s="ยกเลิก">ยกเลิก (1)</button>
+          </div>
+          <table id="list-table">
+            <thead><tr>
+              <th>Request No.</th><th>Smart Seaman ID</th><th>ชื่อ</th><th>นามสกุล</th>
+              <th>ตำแหน่ง</th><th>เอกสาร</th><th>สถานะ</th><th>วันที่ยื่น</th><th>ยอดชำระ</th>
+            </tr></thead>
+            <tbody id="list-tbody"></tbody>
+          </table>
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-top:14px;flex-wrap:wrap;gap:8px">
+            <div style="font-size:12px;color:#6b7280" id="paging-info"></div>
+            <div style="display:flex;align-items:center;gap:6px">
+              <button id="btn-prev" class="btn-ghost" style="height:32px;padding:0 12px;font-size:12px" onclick="changePage(-1)"><i class="ti ti-chevron-left" style="font-size:14px"></i> ก่อนหน้า</button>
+              <div id="paging-numbers" style="display:flex;gap:4px"></div>
+              <button id="btn-next" class="btn-ghost" style="height:32px;padding:0 12px;font-size:12px" onclick="changePage(1)">ถัดไป <i class="ti ti-chevron-right" style="font-size:14px"></i></button>
+            </div>
+            <div style="font-size:11px;color:#4b5563;display:flex;align-items:center;gap:4px"><i class="ti ti-mouse" style="font-size:12px"></i> คลิกที่แถวเพื่อดูรายละเอียด</div>
+          </div>
+        </div>
+      </div>
+      <div class="foot"><span>Copyright © 2026 Smart Seaman. All rights reserved.</span><span>Admin Contact: <a href="#" style="color:#f97316;text-decoration:none">contact.smartseaman@gmail.com</a></span></div>
+    </div>
+
+    <!-- DETAIL PAGE -->
+    <div class="page" id="page-detail">
+      <div class="content">
+        <button class="btn-ghost" style="margin-bottom:16px" onclick="goList()"><i class="ti ti-arrow-left" style="font-size:15px"></i> กลับรายการ</button>
+        <div style="color:#fff;font-size:20px;font-weight:600;margin-bottom:4px">จัดการคำขอต่อเอกสาร</div>
+        <div style="font-size:12px;color:#6b7280;margin-bottom:18px">หน้าหลัก / <span style="color:#d1d5db;cursor:pointer" onclick="goList()">จัดการคำขอต่อเอกสาร</span> / <span style="color:#f97316">รายละเอียดคำขอ</span></div>
+        <!-- Profile -->
+        <div class="card">
+          <div style="display:flex;align-items:center;gap:24px">
+            <div style="display:flex;flex-direction:column;align-items:center;gap:8px;flex-shrink:0;width:110px">
+              <div style="width:72px;height:72px;border-radius:50%;background:#f97316;color:#fff;font-weight:700;font-size:24px;display:flex;align-items:center;justify-content:center" id="d-avatar">SK</div>
+              <div style="text-align:center;line-height:1.4"><div style="color:#fff;font-size:13px;font-weight:600" id="d-name">Capt.สมชาย ใจสุข</div><div style="color:#9ca3af;font-size:11px">(Master)</div></div>
+            </div>
+            <div style="flex:1;min-width:0">
+              <div class="profile-row"><span class="profile-lbl">Date of Birth</span><span class="profile-val">25-Jan-1988</span></div>
+              <div class="profile-row"><span class="profile-lbl">Age</span><span class="profile-val">38</span></div>
+              <div class="profile-row"><span class="profile-lbl">Mobile Phone</span><span class="profile-val">082-464-2893</span></div>
+              <div class="profile-row"><span class="profile-lbl">Email</span><span class="profile-val">somchai.jai@gmail.com</span></div>
+              <div class="profile-row"><span class="profile-lbl">Company</span><span class="profile-val">OCEAN STAR</span></div>
+              <div class="profile-row"><span class="profile-lbl">Smart Seaman ID</span><span class="profile-val" style="color:#f97316;font-weight:600" id="d-ssid">00001</span></div>
+            </div>
+            <div style="width:1px;background:#1e293b;align-self:stretch;flex-shrink:0"></div>
+            <div style="flex:0 0 260px">
+              <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
+                <div style="color:#f97316;font-size:13px;font-weight:600;display:flex;align-items:center;gap:5px"><i class="ti ti-map-pin"></i> ที่อยู่จัดส่ง</div>
+                <button class="copy-btn"><i class="ti ti-copy" style="font-size:12px"></i> คัดลอก</button>
+              </div>
+              <div style="color:#e2e8f0;font-size:13px;line-height:1.9">33/8 หมู่ที่ 6<br>ตำบลคลองตะเกรา<br>อำเภอท่าตะเกียบ<br>จังหวัดฉะเชิงเทรา 24160</div>
+            </div>
+          </div>
+        </div>
+        <!-- Stepper -->
+        <div class="card" style="display:flex;gap:32px;align-items:center;min-height:100px">
+          <div style="flex:0 0 280px">
+            <div style="margin-bottom:14px"><div style="font-size:11px;color:#9ca3af;margin-bottom:3px">เอกสารที่ขอต่ออายุ</div><div style="color:#f97316;font-size:17px;font-weight:600">Basic Safety Training</div></div>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px 16px">
+              <div><div style="font-size:11px;color:#9ca3af;margin-bottom:3px">เลขที่คำขอ</div><div style="color:#e2e8f0;font-size:13px;font-weight:600" id="d-reqno">—</div></div>
+              <div><div style="font-size:11px;color:#9ca3af;margin-bottom:3px">วันที่ยื่น</div><div style="color:#e2e8f0;font-size:13px" id="d-date">—</div></div>
+            </div>
+          </div>
+          <div style="width:1px;background:#1e293b;align-self:stretch;flex-shrink:0"></div>
+          <div style="flex:1;display:flex;align-items:center;justify-content:center"><div class="stepper" id="d-stepper"></div></div>
+        </div>
+        <!-- Tabs -->
+        <div class="card">
+          <div class="tabs" id="d-tabs">
+            <div class="tab" onclick="dTab('docs',this)">เอกสารประกอบ</div>
+            <div class="tab" onclick="dTab('dept',this)">ผลจากกรมเจ้าท่า</div>
+            <div class="tab" onclick="dTab('delivery',this)">การจัดส่ง</div>
+          </div>
+          <div id="d-tab-docs" style="display:none"></div>
+          <div id="d-tab-dept" style="display:none"></div>
+          <div id="d-tab-delivery" style="display:none"></div>
+        </div>
+        <div id="d-actions"></div>
+      </div>
+      <div class="foot"><span>Copyright © 2026 Smart Seaman. All rights reserved.</span><span>Admin Contact: <a href="#" style="color:#f97316;text-decoration:none">contact.smartseaman@gmail.com</a></span></div>
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="modal" style="display:none" onclick="if(event.target===this)closeModal()">
+  <div class="modal" id="modal-content"></div>
+</div>
+
+<script>
+/* ─── STATE ─── */
+const REQUESTS = [
+  {no:'2505008',ssid:'00008',name:'พิมพ์ใจ',lname:'สุขดี',pos:'2nd Officer',doc:'Basic Safety Training',status:'รอตรวจเอกสาร',date:'03/05/2026 09:00',amt:'1,500',resubmit:true},
+  {no:'2505007',ssid:'00001',name:'สมชาย',lname:'ใจสุข',pos:'Master',doc:'Basic Safety Training',status:'รอตรวจเอกสาร',date:'02/05/2026 10:00',amt:'1,500'},
+  {no:'2505006',ssid:'00002',name:'สุภาพร',lname:'ใจงาม',pos:'Chief Officer',doc:'Basic Safety Training',status:'รอผู้ยื่นแก้ไข',date:'01/05/2026 09:00',amt:'1,500'},
+  {no:'2505005',ssid:'00003',name:'ธีรพล',lname:'มั่นคง',pos:'2nd Officer',doc:'Advanced Fire Fighting',status:'รอผลกรมเจ้าท่า',date:'30/04/2026 14:30',amt:'2,500'},
+  {no:'2505004',ssid:'00004',name:'วรพล',lname:'เพชรดี',pos:'Master',doc:'Basic Safety Training',status:'รอรับเอกสารจากกรม',date:'28/04/2026 11:20',amt:'1,500'},
+  {no:'2505003',ssid:'00005',name:'ปิยวัฒน์',lname:'แก้วกาญจนี',pos:'Chief Eng.',doc:'Basic Safety Training',status:'กำลังจัดส่ง',date:'25/04/2026 08:15',amt:'1,500'},
+  {no:'2505002',ssid:'00006',name:'กนกวรรณ',lname:'ทองดี',pos:'2nd Officer',doc:'Basic Safety Training',status:'จัดส่งสำเร็จ',date:'20/04/2026 13:45',amt:'1,500'},
+  {no:'2505001',ssid:'00007',name:'ธนวัฒน์',lname:'รุ่งเรือง',pos:'Master',doc:'Basic Safety Training',status:'ยกเลิก',date:'15/04/2026 09:00',amt:'1,500'},
+];
+const SC = {'รอตรวจเอกสาร':'#ff0000','รอผู้ยื่นแก้ไข':'#ff914d','รอผลกรมเจ้าท่า':'#af87ff','รอรับเอกสารจากกรม':'#ffde59','กำลังจัดส่ง':'#21e5f8','จัดส่งสำเร็จ':'#00bf63','ยกเลิก':'#ff5eb3'};
+
+// doc results state per request
+let docResults = {}; // {docId: {result, note}}
+let docSaved = false;
+let currentReqNo = '';
+
+const DOCS_DEFAULT = [
+  {id:1,n:'สำเนาบัตรประชาชน',f:true},
+  {id:2,n:'รูปถ่ายผู้สมัคร',f:true},
+  {id:3,n:'หนังสือรับรองบริษัท',f:true},
+  {id:4,n:'ใบรับรองแพทย์',f:false},
+];
+const DOCS_RESUB = [
+  {id:1,n:'สำเนาบัตรประชาชน',f:true,upd:false},
+  {id:2,n:'รูปถ่ายผู้สมัคร',f:true,upd:false},
+  {id:3,n:'หนังสือรับรองบริษัท',f:true,upd:true},
+  {id:4,n:'ใบรับรองแพทย์',f:false,upd:false},
+];
+
+/* ─── LIST ─── */
+const PAGE_SIZE = 20;
+let currentPage = 1;
+let currentFilter = 'all';
+
+function renderList(f, page) {
+  currentFilter = f || currentFilter;
+  currentPage = page || 1;
+  const allRows = currentFilter==='all' ? REQUESTS : REQUESTS.filter(r=>r.status===currentFilter);
+  const total = allRows.length;
+  const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
+  if(currentPage > totalPages) currentPage = totalPages;
+  const start = (currentPage-1)*PAGE_SIZE;
+  const rows = allRows.slice(start, start+PAGE_SIZE);
+
+  document.getElementById('list-tbody').innerHTML = rows.map(r=>`
+    <tr class="clickable" onclick="goDetail('${r.no}')">
+      <td>${r.no}</td><td>${r.ssid}</td><td>${r.name}</td><td>${r.lname}</td>
+      <td>${r.pos}</td><td>${r.doc}</td>
+      <td><span style="color:${SC[r.status]||'#9ca3af'};font-weight:600">${r.status}</span>${r.resubmit?` <span style="background:#1e3a5f;color:#60a5fa;border-radius:4px;padding:1px 7px;font-size:10px;font-weight:600;margin-left:6px">ผู้ยื่น resubmit</span>`:''}</td>
+      <td>${r.date}</td><td>${r.amt}</td>
+    </tr>`).join('') || `<tr><td colspan="9" style="text-align:center;color:#6b7280;padding:24px">ไม่พบข้อมูล</td></tr>`;
+
+  // paging info
+  const from = total===0?0:start+1, to = Math.min(start+PAGE_SIZE, total);
+  document.getElementById('paging-info').textContent = `แสดง ${from}–${to} จากทั้งหมด ${total} รายการ`;
+
+  // page number buttons
+  const pn = document.getElementById('paging-numbers');
+  pn.innerHTML = '';
+  for(let p=1;p<=totalPages;p++){
+    const btn = document.createElement('button');
+    btn.textContent = p;
+    btn.style.cssText = `height:32px;min-width:32px;padding:0 8px;border-radius:5px;border:1px solid ${p===currentPage?'#f97316':'#2a3a4a'};background:${p===currentPage?'#f97316':'transparent'};color:${p===currentPage?'#fff':'#9ca3af'};cursor:pointer;font-size:12px;font-family:'Sarabun',sans-serif`;
+    btn.onclick = ()=>renderList(currentFilter, p);
+    pn.appendChild(btn);
+  }
+
+  // prev/next buttons
+  const bp = document.getElementById('btn-prev'), bn = document.getElementById('btn-next');
+  if(bp) bp.disabled = currentPage<=1;
+  if(bn) bn.disabled = currentPage>=totalPages;
+}
+
+function changePage(dir) {
+  renderList(currentFilter, currentPage+dir);
+}
+
+document.getElementById('list-tab-bar').addEventListener('click',e=>{
+  const b=e.target.closest('[data-s]'); if(!b) return;
+  document.querySelectorAll('#list-tab-bar .tab-btn').forEach(x=>x.classList.remove('on'));
+  b.classList.add('on'); renderList(b.dataset.s, 1);
+});
+renderList('all', 1);
+
+/* ─── NAVIGATION ─── */
+function goList() {
+  document.getElementById('page-list').classList.add('on');
+  document.getElementById('page-detail').classList.remove('on');
+  closeModal();
+  document.getElementById('main-scroll').scrollTop=0;
+  renderList(currentFilter, currentPage);
+}
+function goDetail(reqno) {
+  currentReqNo = reqno;
+  docSaved = false;
+  const req = REQUESTS.find(r=>r.no===reqno);
+  // init doc results
+  docResults = {};
+  const docs = req.resubmit ? DOCS_RESUB : DOCS_DEFAULT;
+  docs.forEach(d=>{
+    // pre-fill: resubmit case row 1,2 pass, row 3 blank (new file), row 4 blank
+    if(req.resubmit) {
+      docResults[d.id] = d.id<=2 ? {result:'pass',note:''} : {result:'',note:''};
+    } else {
+      // default: 1,2 pass; 3 fix; 4 blank
+      if(d.id===1||d.id===2) docResults[d.id]={result:'pass',note:''};
+      else if(d.id===3) docResults[d.id]={result:'fix',note:'หนังสือหมดอายุ'};
+      else docResults[d.id]={result:'',note:''};
+    }
+  });
+
+  document.getElementById('page-list').classList.remove('on');
+  document.getElementById('page-detail').classList.add('on');
+  document.getElementById('d-reqno').textContent = reqno;
+  document.getElementById('d-date').textContent = req.date;
+  document.getElementById('main-scroll').scrollTop=0;
+  renderDetail(req);
+}
+
+/* ─── STEPPER ─── */
+function stepperHtml(done, active) {
+  const S=[{n:1,l:'ตรวจเอกสาร'},{n:2,l:'รอผลกรมเจ้าท่า'},{n:3,l:'รอรับเอกสาร<br>จากกรมเจ้าท่า'},{n:4,l:'กำลังจัดส่ง'},{n:5,l:'จัดส่งสำเร็จ'}];
+  return S.map((s,i)=>{
+    const d=done.includes(s.n), a=s.n===active;
+    const c=d?'sc-done':a?'sc-active':'sc-pending', lc=d?'sl-done':a?'sl-active':'';
+    return `<div class="step"><div class="step-circle ${c}">${s.n}</div><div class="step-lbl ${lc}">${s.l}</div></div>${i<S.length-1?`<div class="step-dash${d?' sd-done':''}"></div>`:''}`;
+  }).join('');
+}
+
+/* ─── HELPERS ─── */
+function dp(val='') {
+  return `<div class="date-wrap"><span class="${val?'date-vl':'date-ph'}">${val||'dd/mm/yyyy'}</span><i class="ti ti-calendar" style="font-size:16px;color:#9ca3af"></i><input type="date" onchange="let s=this.parentElement.querySelector('span');s.textContent=this.value;s.className='date-vl'"></div>`;
+}
+function leftPanel(title, rows) {
+  return `<div style="flex:0 0 44%;padding-right:24px;border-right:1px solid #1e293b">
+    <div style="color:#fff;font-size:14px;font-weight:600;margin-bottom:14px">${title}</div>
+    ${rows.map(r=>`<div class="ir"><span class="il">${r[0]}</span><span class="iv">${r[1]}</span></div>`).join('')}
+  </div>`;
+}
+function dTab(name, el) {
+  document.querySelectorAll('#d-tabs .tab').forEach(t=>t.classList.remove('on'));
+  el.classList.add('on');
+  ['docs','dept','delivery'].forEach(id=>document.getElementById('d-tab-'+id).style.display=id===name?'block':'none');
+}
+function setDefaultTab(name) {
+  const map={docs:0,dept:1,delivery:2};
+  document.querySelectorAll('#d-tabs .tab').forEach((t,i)=>t.classList.toggle('on',i===map[name]));
+  ['docs','dept','delivery'].forEach(id=>document.getElementById('d-tab-'+id).style.display=id===name?'block':'none');
+}
+function toast(msg, color='#16a34a') {
+  const t=document.createElement('div');
+  t.className='toast'; t.style.background=color;
+  t.innerHTML=`<i class="ti ti-circle-check" style="font-size:18px"></i> ${msg}`;
+  document.body.appendChild(t);
+  setTimeout(()=>{t.style.opacity='0';setTimeout(()=>t.remove(),300);},2500);
+}
+
+/* ─── DOC TABLE ─── */
+function updDocBtn() {
+  const req = REQUESTS.find(r=>r.no===currentReqNo);
+  const docs = req&&req.resubmit ? DOCS_RESUB : DOCS_DEFAULT;
+  const allAnswered = docs.every(d=>docResults[d.id]&&docResults[d.id].result!=='');
+  const allPass = docs.every(d=>docResults[d.id]&&docResults[d.id].result==='pass');
+  const hasFix = docs.some(d=>docResults[d.id]&&docResults[d.id].result==='fix');
+
+  const hint = document.getElementById('doc-hint');
+  const btnSB = document.getElementById('btn-sb');
+  const btnSubmit = document.getElementById('btn-submit');
+  if(!hint) return;
+
+  if(!docSaved) { hint.textContent='บันทึกผลตรวจก่อนดำเนินการต่อ'; }
+  else if(!allAnswered) { hint.textContent='ยังมีเอกสารที่ยังไม่ได้ตรวจ'; }
+  else if(allPass) { hint.textContent=''; }
+  else { hint.textContent='มีเอกสารที่ต้องแก้ไข'; }
+
+  if(btnSB) btnSB.disabled = !(docSaved && allAnswered && hasFix);
+  if(btnSubmit) btnSubmit.disabled = !(docSaved && allPass);
+}
+
+function onSaveDoc() {
+  const req = REQUESTS.find(r=>r.no===currentReqNo);
+  const docs = req&&req.resubmit ? DOCS_RESUB : DOCS_DEFAULT;
+  // validate: note required when fix
+  let hasError = false;
+  docs.forEach(d=>{
+    const sel = document.querySelector(`#doc-row-${d.id} .result-select`);
+    const noteEl = document.querySelector(`#doc-row-${d.id} .note-input`);
+    if(sel && sel.value==='fix' && noteEl && !noteEl.value.trim()) {
+      noteEl.style.borderColor='#ef4444';
+      noteEl.placeholder='กรุณาระบุหมายเหตุ *';
+      noteEl.style.color='#ff0000';
+      hasError = true;
+    }
+    if(sel) docResults[d.id] = {result:sel.value, note:noteEl?noteEl.value:''};
+  });
+  if(hasError) {
+    toast('กรุณาระบุหมายเหตุสำหรับเอกสารที่ต้องแก้ไข','#ef4444');
+    return;
+  }
+  docSaved = true;
+  updDocBtn();
+  const b=document.getElementById('btn-savedoc');
+  if(!b) return;
+  const orig=b.innerHTML;
+  b.innerHTML='<i class="ti ti-check" style="font-size:15px"></i> บันทึกแล้ว';
+  b.style.background='#16a34a';b.style.border='none';b.style.color='#fff';
+  setTimeout(()=>{b.innerHTML=orig;b.style.cssText='';},2000);
+}
+
+function docTableHtml(docs, editable) {
+  return `<table style="margin-bottom:10px"><colgroup><col style="width:44px"><col><col style="width:140px"><col><col style="width:60px"><col style="width:90px"></colgroup>
+  <thead><tr><th>ลำดับที่</th><th>เอกสาร</th><th>ผลตรวจ</th><th>หมายเหตุ <span style="color:#ef4444;font-size:10px">(required เมื่อเลือก ต้องแก้ไข)</span></th><th style="text-align:center">ไฟล์</th><th style="text-align:center">Actions</th></tr></thead>
+  <tbody>${docs.map(d=>{
+    const dr = docResults[d.id]||{result:'',note:''};
+    const rc = dr.result==='pass'?'rs-pass':dr.result==='fix'?'rs-fix':'rs-def';
+    return `<tr id="doc-row-${d.id}">
+      <td>${d.id}</td>
+      <td>${d.n}${d.upd?` <span style="background:#1e3a5f;color:#60a5fa;border-radius:4px;padding:1px 7px;font-size:10px;font-weight:600;margin-left:4px">อัปเดตใหม่</span>`:''}</td>
+      <td>${editable?`<select class="result-select ${rc}" onchange="const noteEl=document.querySelector('#doc-row-${d.id} .note-input');docResults[${d.id}]={result:this.value,note:noteEl?noteEl.value:''};this.className='result-select '+(this.value==='pass'?'rs-pass':this.value==='fix'?'rs-fix':'rs-def');if(noteEl){noteEl.style.borderColor=this.value==='fix'?'#ef4444':'#2a3a4a';noteEl.required=this.value==='fix';}docSaved=false;updDocBtn()">
+        <option value="">— เลือกผล —</option>
+        <option value="pass" ${dr.result==='pass'?'selected':''}>ผ่าน</option>
+        <option value="fix" ${dr.result==='fix'?'selected':''}>ต้องแก้ไข</option>
+      </select>`:`<span style="color:${dr.result==='pass'?'#00bf63':'#ff0000'};font-size:13px">${dr.result==='pass'?'✓ ผ่าน':dr.result==='fix'?'✗ ต้องแก้ไข':'—'}</span>`}</td>
+      <td>${editable?`<input class="note-input" type="text" value="${dr.note}" placeholder="ระบุหมายเหตุ (ถ้ามี)" style="${dr.result==='fix'?'color:#ff0000':''}" oninput="docResults[${d.id}].note=this.value;docSaved=false;updDocBtn()">`:`<span style="color:#4b5563;font-size:12px">${dr.note||'—'}</span>`}</td>
+      <td style="text-align:center"><button class="btn-icon" onclick="openFile('${d.n}')"><i class="ti ti-eye" style="font-size:16px"></i></button></td>
+      <td style="text-align:center"><div style="display:flex;gap:5px;justify-content:center">
+        <button class="btn-icon" ${!d.f?'disabled':''}><i class="ti ti-download" style="font-size:15px"></i></button>
+        ${editable?`<button class="btn-icon" onclick="openEditModal('${d.n}')"><i class="ti ti-edit" style="font-size:15px"></i></button>`:''}
+      </div></td>
+    </tr>`;
+  }).join('')}</tbody></table>`;
+}
+
+function docTableViewOnly() {
+  return `<div style="display:flex;align-items:center;gap:8px;margin-bottom:12px"><i class="ti ti-lock" style="font-size:14px;color:#6b7280"></i><span style="font-size:12px;color:#6b7280">ผ่านการตรวจแล้ว — view only</span></div>
+  <table><colgroup><col style="width:44px"><col><col style="width:120px"><col><col style="width:60px"><col style="width:60px"></colgroup>
+  <thead><tr><th>ลำดับที่</th><th>เอกสาร</th><th>ผลตรวจ</th><th>หมายเหตุ</th><th style="text-align:center">ไฟล์</th><th style="text-align:center">ดาวน์โหลด</th></tr></thead>
+  <tbody>${DOCS_DEFAULT.map((d,i)=>`<tr>
+    <td>${d.id}</td><td>${d.n}</td>
+    <td><span style="color:#00bf63">✓ ผ่าน</span></td>
+    <td><span style="color:#4b5563;font-size:12px">—</span></td>
+    <td style="text-align:center"><button class="btn-icon" onclick="openFile('${d.n}')"><i class="ti ti-eye" style="font-size:15px"></i></button></td>
+    <td style="text-align:center"><button class="btn-icon" ${i===3?'disabled':''}><i class="ti ti-download" style="font-size:15px"></i></button></td>
+  </tr>`).join('')}</tbody></table>`;
+}
+
+/* ─── RENDER DETAIL ─── */
+function renderDetail(req) {
+  const status = req.status;
+  const docsEl = document.getElementById('d-tab-docs');
+  const deptEl = document.getElementById('d-tab-dept');
+  const delivEl = document.getElementById('d-tab-delivery');
+  const actEl = document.getElementById('d-actions');
+  docSaved = false;
+
+  const edocSection = (docs, label='') => `
+    ${label?`<div style="color:#fff;font-size:13px;font-weight:500;margin-bottom:10px">${label}</div>`:''}
+    ${docTableHtml(docs, true)}
+    <div style="display:flex;justify-content:flex-end;margin-bottom:8px">
+      <button class="btn-ghost" id="btn-savedoc" onclick="onSaveDoc()"><i class="ti ti-device-floppy" style="font-size:15px"></i> บันทึกผลตรวจ</button>
+    </div>
+    <div style="border-top:1px dashed #2d3748;padding-top:12px;display:flex;justify-content:space-between;align-items:center">
+      <button class="btn-d" onclick="confirmModal('cancel')"><i class="ti ti-trash" style="font-size:15px"></i> ยกเลิกคำขอ</button>
+      <div style="display:flex;gap:10px;align-items:center">
+        <span id="doc-hint" style="font-size:12px;color:#6b7280">บันทึกผลตรวจก่อนดำเนินการต่อ</span>
+        <button class="btn-g" id="btn-sb" disabled onclick="confirmModal('sendback')"><i class="ti ti-arrow-back" style="font-size:15px"></i> ส่งกลับให้แก้ไข</button>
+        <button class="btn-o" id="btn-submit" disabled onclick="confirmModal('submit')"><i class="ti ti-send" style="font-size:15px"></i> ยื่นกรมเจ้าท่าแล้ว</button>
+      </div>
+    </div>`;
+
+  // ── รอตรวจเอกสาร ──
+  if(status==='รอตรวจเอกสาร') {
+    document.getElementById('d-stepper').innerHTML = stepperHtml([],1);
+    const docs = req.resubmit ? DOCS_RESUB : DOCS_DEFAULT;
+    const badge = req.resubmit ? `<div style="display:flex;align-items:center;gap:10px;margin-bottom:14px">
+      <span style="background:#1e3a5f;color:#60a5fa;border-radius:6px;padding:5px 12px;font-size:12px;font-weight:600;display:inline-flex;align-items:center;gap:6px"><i class="ti ti-refresh" style="font-size:14px"></i> ผู้ยื่นแก้ไขและส่งกลับมาแล้ว</span>
+      <span style="font-size:12px;color:#6b7280">อัปเดตเมื่อ ${req.date}</span>
+    </div>` : '';
+    docsEl.innerHTML = badge + `<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
+      <div style="color:#fff;font-size:14px;font-weight:500">รายการเอกสารประกอบ</div>
+      <button class="btn-o" style="height:34px;font-size:12px"><i class="ti ti-download" style="font-size:14px"></i> ดาวน์โหลดทั้งหมด (.zip)</button>
+    </div>` + edocSection(docs);
+    deptEl.innerHTML = `<div style="color:#9ca3af;font-size:13px;text-align:center;padding:40px 0"><i class="ti ti-clock" style="font-size:32px;display:block;margin-bottom:8px;color:#374151"></i>ยังไม่มีข้อมูลผลจากกรมเจ้าท่า</div>`;
+    delivEl.innerHTML = `<div style="color:#9ca3af;font-size:13px;text-align:center;padding:40px 0"><i class="ti ti-truck-delivery" style="font-size:32px;display:block;margin-bottom:8px;color:#374151"></i>ยังไม่มีข้อมูลการจัดส่ง</div>`;
+    actEl.innerHTML='';
+    setDefaultTab('docs');
+    setTimeout(updDocBtn,50);
+  }
+
+  // ── รอผู้ยื่นแก้ไข ──
+  else if(status==='รอผู้ยื่นแก้ไข') {
+    document.getElementById('d-stepper').innerHTML = stepperHtml([],1);
+    docsEl.innerHTML = `<div style="display:flex;align-items:center;gap:10px;margin-bottom:14px">
+      <span style="background:#2a2060;color:#a78bfa;border-radius:6px;padding:5px 12px;font-size:12px;font-weight:600;display:inline-flex;align-items:center;gap:6px"><i class="ti ti-clock" style="font-size:14px"></i> รอผู้ยื่นแก้ไขเอกสาร</span>
+      <span style="font-size:12px;color:#6b7280">ส่งกลับเมื่อ ${req.date}</span>
+    </div>
+    ${docTableHtml(DOCS_DEFAULT, false)}`;
+    deptEl.innerHTML = `<div style="color:#9ca3af;font-size:13px;text-align:center;padding:40px 0"><i class="ti ti-clock" style="font-size:32px;display:block;margin-bottom:8px;color:#374151"></i>ยังไม่มีข้อมูล</div>`;
+    delivEl.innerHTML = emptyDelivery();
+    actEl.innerHTML = `<div style="display:flex;justify-content:space-between"><button class="btn-d" onclick="confirmModal('cancel')"><i class="ti ti-trash" style="font-size:15px"></i> ยกเลิกคำขอ</button><div></div></div>`;
+    setDefaultTab('docs');
+  }
+
+  // ── รอผลกรมเจ้าท่า ──
+  else if(status==='รอผลกรมเจ้าท่า') {
+    document.getElementById('d-stepper').innerHTML = stepperHtml([1],2);
+    docsEl.innerHTML = docTableViewOnly();
+    deptEl.innerHTML = deptPhase1Html();
+    delivEl.innerHTML = emptyDelivery();
+    actEl.innerHTML='';
+    setDefaultTab('dept');
+    setTimeout(updDocBtn,50);
+  }
+
+  // ── รอรับเอกสารจากกรม ──
+  else if(status==='รอรับเอกสารจากกรม') {
+    document.getElementById('d-stepper').innerHTML = stepperHtml([1,2],3);
+    docsEl.innerHTML = docTableViewOnly();
+    deptEl.innerHTML = deptPhase2Html();
+    delivEl.innerHTML = emptyDelivery();
+    actEl.innerHTML='';
+    setDefaultTab('dept');
+  }
+
+  // ── กำลังจัดส่ง ──
+  else if(status==='กำลังจัดส่ง') {
+    document.getElementById('d-stepper').innerHTML = stepperHtml([1,2,3,4]);
+    docsEl.innerHTML = docTableViewOnly();
+    deptEl.innerHTML = deptDoneHtml();
+    delivEl.innerHTML = deliveryTabHtml(false);
+    actEl.innerHTML='';
+    setDefaultTab('delivery');
+  }
+
+  // ── จัดส่งสำเร็จ ──
+  else if(status==='จัดส่งสำเร็จ') {
+    document.getElementById('d-stepper').innerHTML = stepperHtml([1,2,3,4,5]);
+    docsEl.innerHTML = docTableViewOnly();
+    deptEl.innerHTML = deptDoneHtml();
+    delivEl.innerHTML = deliveryTabHtml(true);
+    actEl.innerHTML='';
+    setDefaultTab('delivery');
+  }
+
+  // ── ยกเลิก ──
+  else if(status==='ยกเลิก') {
+    document.getElementById('d-stepper').innerHTML = stepperHtml([],1);
+    docsEl.innerHTML = `<div style="display:flex;align-items:center;gap:10px;margin-bottom:14px">
+      <span style="background:#2d1515;color:#f87171;border-radius:6px;padding:5px 12px;font-size:12px;font-weight:600;display:inline-flex;align-items:center;gap:6px"><i class="ti ti-x" style="font-size:14px"></i> ยกเลิกคำขอแล้ว</span>
+      <span style="font-size:12px;color:#6b7280">ยกเลิกเมื่อ ${req.date}</span>
+    </div>
+    ${docTableHtml(DOCS_DEFAULT, false)}`;
+    deptEl.innerHTML = `<div style="color:#9ca3af;font-size:13px;text-align:center;padding:40px 0"><i class="ti ti-ban" style="font-size:32px;display:block;margin-bottom:8px;color:#374151"></i>คำขอถูกยกเลิก</div>`;
+    delivEl.innerHTML = emptyDelivery();
+    actEl.innerHTML='';
+    setDefaultTab('docs');
+  }
+}
+
+/* ─── DEPT TAB SECTIONS ─── */
+function deptPhase1Html() {
+  return `<div style="display:flex;gap:0;align-items:flex-start">
+    ${leftPanel('ข้อมูลการยื่นกรมเจ้าท่า',[['วันที่ยื่น Google Form','03/05/2026 09:30:00'],['ผู้ดำเนินการ','superadmin02'],['เบอร์ติดต่อผู้ดำเนินการ','081-234-5678']])}
+    <div style="flex:1;padding-left:24px">
+      <div style="color:#fff;font-size:14px;font-weight:600;margin-bottom:14px">บันทึกผลจากกรม</div>
+      <div style="display:flex;align-items:flex-end;gap:12px">
+        <div style="flex:1"><div class="fl">วันที่สามารถรับเอกสารได้ตั้งแต่ <span class="req">*</span></div>${dp()}</div>
+        <button class="btn-o" onclick="confirmModal('p1')"><i class="ti ti-device-floppy" style="font-size:15px"></i> บันทึกผลจากกรม</button>
+      </div>
+    </div>
+  </div>
+  <div style="border-top:1px solid #1e293b;padding-top:16px;margin-top:16px">
+    <div style="color:#fff;font-size:13px;font-weight:500;margin-bottom:10px">รายการเอกสารประกอบ <span style="color:#9ca3af;font-size:11px;font-weight:400">(แก้ไขได้หากกรมแจ้งให้ปรับ)</span></div>
+    ${docTableHtml(DOCS_DEFAULT, true)}
+    <div style="display:flex;justify-content:flex-end;margin-bottom:8px">
+      <button class="btn-ghost" id="btn-savedoc" onclick="onSaveDoc()"><i class="ti ti-device-floppy" style="font-size:15px"></i> บันทึกผลตรวจ</button>
+    </div>
+    <div style="border-top:1px dashed #2d3748;padding-top:12px;display:flex;justify-content:space-between;align-items:center">
+      <button class="btn-d" onclick="confirmModal('cancel')"><i class="ti ti-trash" style="font-size:15px"></i> ยกเลิกคำขอ</button>
+      <div style="display:flex;gap:10px;align-items:center">
+        <span id="doc-hint" style="font-size:12px;color:#6b7280">บันทึกผลตรวจก่อนดำเนินการต่อ</span>
+        <button class="btn-g" id="btn-sb" disabled onclick="confirmModal('sendback')"><i class="ti ti-arrow-back" style="font-size:15px"></i> ส่งกลับให้แก้ไข</button>
+      </div>
+    </div>
+  </div>`;
+}
+
+function deptPhase2Html() {
+  return `<div style="display:flex;gap:0;align-items:flex-start">
+    ${leftPanel('ข้อมูลจากกรมเจ้าท่า',[['วันที่ยื่น Google Form','03/05/2026 09:30:00'],['ผู้ดำเนินการ','superadmin02'],['เบอร์ติดต่อผู้ดำเนินการ','081-234-5678'],['วันที่รับเอกสารได้ตั้งแต่','10/05/2026']])}
+    <div style="flex:1;padding-left:24px">
+      <div style="color:#fff;font-size:14px;font-weight:600;margin-bottom:14px">บันทึกรับเอกสารจากกรม</div>
+      <div style="margin-bottom:14px">
+        <div class="fl">วันที่สามารถรับเอกสารได้ตั้งแต่ <span style="color:#6b7280;font-size:11px">(แก้ไขได้)</span></div>
+        <div style="display:flex;gap:10px;align-items:center">${dp('10/05/2026')}<button class="btn-ghost" style="flex-shrink:0"><i class="ti ti-device-floppy" style="font-size:14px"></i> บันทึกการเปลี่ยนแปลง</button></div>
+      </div>
+      <div style="border-top:1px solid #1e293b;padding-top:14px">
+        <div style="display:flex;align-items:flex-end;gap:12px">
+          <div style="flex:1"><div class="fl">วันที่รับเอกสาร <span class="req">*</span></div>${dp()}</div>
+          <button class="btn-o" onclick="confirmModal('p2')"><i class="ti ti-check" style="font-size:15px"></i> บันทึกรับเอกสาร</button>
+        </div>
+      </div>
+      <div style="border-top:1px solid #1e293b;padding-top:14px;margin-top:14px">
+        <div style="color:#fff;font-size:13px;font-weight:600;margin-bottom:6px">บันทึกข้อมูลการจัดส่ง</div>
+        <div style="font-size:12px;color:#9ca3af;margin-bottom:12px">กรุณากรอกข้อมูลหลังจากส่งไปรษณีย์แล้ว</div>
+        <div style="margin-bottom:12px"><div class="fl">Tracking No. <span class="req">*</span></div><input class="fi" type="text" placeholder="เช่น EF123456789TH" id="inp-tracking"></div>
+        <div style="display:flex;align-items:flex-end;gap:12px">
+          <div style="flex:1"><div class="fl">วันที่จัดส่ง <span class="req">*</span></div>${dp()}</div>
+          <button class="btn-o" onclick="confirmModal('p3')"><i class="ti ti-send" style="font-size:15px"></i> บันทึกข้อมูลจัดส่ง</button>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div style="border-top:1px solid #1e293b;padding-top:16px;margin-top:16px">
+    <div style="color:#fff;font-size:13px;font-weight:500;margin-bottom:10px">รายการเอกสารประกอบ <span style="display:inline-flex;align-items:center;gap:4px;font-size:11px;color:#6b7280"><i class='ti ti-lock' style='font-size:12px'></i> view only</span></div>
+    ${docTableViewOnly()}
+  </div>`;
+}
+
+function deptDoneHtml() {
+  return `<div style="display:flex;gap:0;align-items:flex-start">
+    ${leftPanel('ข้อมูลจากกรมเจ้าท่า',[['วันที่ยื่น Google Form','03/05/2026 09:30:00'],['ผู้ดำเนินการ','superadmin02'],['เบอร์ติดต่อผู้ดำเนินการ','081-234-5678'],['วันที่รับเอกสารได้ตั้งแต่','10/05/2026'],['วันที่รับเอกสารจริง','11/05/2026']])}
+    <div style="flex:1;padding-left:24px">
+      <div style="color:#fff;font-size:14px;font-weight:600;margin-bottom:14px">ข้อมูลการจัดส่ง</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px 24px">
+        <div><div style="font-size:11px;color:#9ca3af;margin-bottom:3px">Tracking No.</div><div style="color:#fff;font-size:13px;font-weight:600;font-family:monospace">EF123456789TH</div></div>
+        <div><div style="font-size:11px;color:#9ca3af;margin-bottom:3px">วันที่จัดส่ง</div><div style="color:#e2e8f0;font-size:13px">12/05/2026</div></div>
+        <div><div style="font-size:11px;color:#9ca3af;margin-bottom:3px">วันที่/เวลาบันทึก</div><div style="color:#e2e8f0;font-size:13px">12/05/2026 15:00:00</div></div>
+        <div><div style="font-size:11px;color:#9ca3af;margin-bottom:3px">ผู้ดำเนินการ</div><div style="color:#e2e8f0;font-size:13px">superadmin02</div></div>
+      </div>
+    </div>
+  </div>
+  <div style="border-top:1px solid #1e293b;padding-top:16px;margin-top:16px">
+    <div style="color:#fff;font-size:13px;font-weight:500;margin-bottom:10px">รายการเอกสารประกอบ <span style="display:inline-flex;align-items:center;gap:4px;font-size:11px;color:#6b7280"><i class='ti ti-lock' style='font-size:12px'></i> view only</span></div>
+    ${docTableViewOnly()}
+  </div>`;
+}
+
+function emptyDelivery() {
+  return `<div style="color:#9ca3af;font-size:13px;text-align:center;padding:40px 0"><i class="ti ti-truck-delivery" style="font-size:32px;display:block;margin-bottom:8px;color:#374151"></i>ยังไม่มีข้อมูลการจัดส่ง</div>`;
+}
+
+function deliveryTabHtml(isDelivered) {
+  const tracks = isDelivered ? [
+    {time:'13/05/2026 11:20',status:'จัดส่งสำเร็จ',loc:'ผู้รับ: สมชาย ใจสุข — ฉะเชิงเทรา',cur:false},
+    {time:'13/05/2026 08:15',status:'อยู่ระหว่างนำจ่าย',loc:'ที่ทำการไปรษณีย์ ท่าตะเกียบ',cur:false},
+    {time:'12/05/2026 08:00',status:'รับฝากเรียบร้อย',loc:'ที่ทำการไปรษณีย์ บางรัก',cur:false},
+  ] : [
+    {time:'12/05/2026 14:30',status:'อยู่ระหว่างขนส่ง',loc:'ศูนย์ไปรษณีย์ กรุงเทพฯ ลาดกระบัง',cur:true},
+    {time:'12/05/2026 08:00',status:'รับฝากเรียบร้อย',loc:'ที่ทำการไปรษณีย์ บางรัก',cur:false},
+  ];
+  return `<div style="display:flex;gap:0;align-items:flex-start">
+    <div style="flex:0 0 44%;padding-right:24px;border-right:1px solid #1e293b">
+      <div style="color:#fff;font-size:14px;font-weight:600;margin-bottom:14px">ข้อมูลการจัดส่ง</div>
+      <div class="ir"><span class="il">Tracking No.</span><span class="iv" style="display:flex;align-items:center;gap:8px"><span style="font-weight:600;color:#fff;font-family:monospace">EF123456789TH</span><button class="copy-btn"><i class="ti ti-copy" style="font-size:11px"></i> คัดลอก</button></span></div>
+      <div class="ir"><span class="il">วันที่จัดส่ง</span><span class="iv">12/05/2026</span></div>
+      <div class="ir"><span class="il">วันที่/เวลาบันทึก</span><span class="iv">12/05/2026 15:00:00</span></div>
+      <div class="ir"><span class="il">ผู้ดำเนินการ</span><span class="iv">superadmin02</span></div>
+    </div>
+    <div style="flex:1;padding-left:24px">
+      <div style="color:#fff;font-size:14px;font-weight:600;margin-bottom:10px">สถานะการจัดส่ง</div>
+      <div style="font-size:11px;color:#4b5563;margin-bottom:14px;display:flex;align-items:center;gap:5px"><i class="ti ti-info-circle" style="font-size:12px"></i> ข้อมูลจาก API ไปรษณีย์ไทย</div>
+      <div style="padding-left:4px">${tracks.map((t,i)=>`
+        <div class="track-item">
+          <div class="track-dot-col">
+            <div class="track-dot ${t.cur?'td-cur':'td-done'}"></div>
+            ${i<tracks.length-1?`<div class="track-line"></div>`:''}
+          </div>
+          <div class="track-time">${t.time}</div>
+          <div style="flex:1"><div class="track-status ${t.cur?'ts-cur':'ts-done'}">${t.status}</div><div class="track-loc">${t.loc}</div></div>
+        </div>`).join('')}
+      </div>
+    </div>
+  </div>`;
+}
+
+/* ─── CONFIRM & ACTION FLOW ─── */
+function confirmModal(action) {
+  const cfg = {
+    cancel:   {icon:'mi-danger',title:'ยืนยันยกเลิกคำขอ',      body:'ระบบจะเปลี่ยนสถานะเป็น <span class="hl">"ยกเลิกคำขอ"</span>',danger:true},
+    sendback: {icon:'mi-warn',  title:'ยืนยันส่งกลับให้แก้ไข', body:'ระบบจะเปลี่ยนสถานะเป็น <span class="hl">"รอผู้ยื่นแก้ไข"</span>'},
+    submit:   {icon:'mi-warn',  title:'ยืนยันยื่นกรมเจ้าท่าแล้ว',body:'ระบบจะเปลี่ยนสถานะเป็น <span class="hl">"รอผลกรมเจ้าท่า"</span>'},
+    p1:       {icon:'mi-warn',  title:'ยืนยันบันทึกผลจากกรม',   body:'ระบบจะเปลี่ยนสถานะเป็น <span class="hl">"รอรับเอกสารจากกรม"</span>'},
+    p2:       {icon:'mi-warn',  title:'ยืนยันบันทึกรับเอกสาร',  body:'บันทึกแล้วสามารถกรอก Tracking No. ได้ด้านล่างเลยค่ะ'},
+    p3:       {icon:'mi-warn',  title:'ยืนยันบันทึกข้อมูลจัดส่ง',body:'ระบบจะเปลี่ยนสถานะเป็น <span class="hl">"กำลังจัดส่ง"</span>'},
+  };
+  const m = cfg[action];
+  document.getElementById('modal-content').innerHTML = `
+    <div style="text-align:center">
+      <div class="modal-icon ${m.icon}"><i class="ti ti-alert-${m.danger?'triangle':'circle'}"></i></div>
+      <div class="modal-title">${m.title}</div>
+      <div class="modal-body">${m.body}</div>
+      <div class="modal-actions">
+        <button class="btn-mc" onclick="closeModal()">ยกเลิก</button>
+        <button class="${m.danger?'btn-mdanger':'btn-mok'}" onclick="doAction('${action}')">ยืนยัน</button>
+      </div>
+    </div>`;
+  document.getElementById('modal').style.display='flex';
+}
+
+function doAction(action) {
+  closeModal();
+  const req = REQUESTS.find(r=>r.no===currentReqNo);
+  if(!req) return;
+
+  if(action==='cancel') {
+    req.status='ยกเลิก'; req.resubmit=false;
+    toast('ยกเลิกคำขอเรียบร้อยแล้ว','#ef4444');
+    renderDetail(req);
+  }
+  else if(action==='sendback') {
+    req.status='รอผู้ยื่นแก้ไข'; req.resubmit=false;
+    toast('ส่งกลับให้ผู้ยื่นแก้ไขแล้ว','#f97316');
+    renderDetail(req);
+  }
+  else if(action==='submit') {
+    req.status='รอผลกรมเจ้าท่า';
+    toast('บันทึกยื่นกรมเจ้าท่าแล้ว');
+    renderDetail(req);
+    setDefaultTab('dept');
+  }
+  else if(action==='p1') {
+    req.status='รอรับเอกสารจากกรม';
+    toast('บันทึกผลจากกรมเรียบร้อย');
+    renderDetail(req);
+  }
+  else if(action==='p2') {
+    toast('บันทึกรับเอกสารแล้ว — กรอก Tracking No. ด้านล่างได้เลยค่ะ');
+    // stay on same page, phase 2+3 already rendered together
+  }
+  else if(action==='p3') {
+    req.status='กำลังจัดส่ง';
+    toast('บันทึกข้อมูลจัดส่งแล้ว ระบบเปลี่ยนสถานะเป็นกำลังจัดส่ง');
+    renderDetail(req);
+    setDefaultTab('delivery');
+  }
+  // update list
+  renderList(document.querySelector('#list-tab-bar .tab-btn.on').dataset.s);
+}
+
+/* ─── FILE ACTIONS ─── */
+function openFile(docName) {
+  const html=`<!DOCTYPE html><html><head><meta charset="UTF-8"><title>${docName}</title>
+  <style>*{margin:0;padding:0;box-sizing:border-box}body{background:#404040;display:flex;flex-direction:column;height:100vh;font-family:sans-serif}
+  .toolbar{background:#323639;height:48px;display:flex;align-items:center;padding:0 16px;gap:16px;color:#9aa0a6;font-size:13px}
+  .toolbar span{color:#e8eaed;font-weight:500}
+  .viewer{flex:1;display:flex;align-items:center;justify-content:center;padding:24px}
+  .page{background:#fff;width:794px;min-height:1123px;box-shadow:0 4px 24px rgba(0,0,0,.5);display:flex;align-items:center;justify-content:center}
+  </style></head><body>
+  <div class="toolbar">
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+    <span>${docName}.pdf</span><span style="margin-left:auto;color:#9aa0a6">1 / 1</span>
+  </div>
+  <div class="viewer"><div class="page">
+    <div style="text-align:center;color:#6b7280">
+      <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="#d1d5db" stroke-width="1.5" style="margin-bottom:16px"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+      <div style="font-size:18px;font-weight:600;color:#111827;margin-bottom:8px">${docName}</div>
+      <div style="font-size:13px">ไฟล์เอกสารจริงจะแสดงที่นี่</div>
+    </div>
+  </div></div></body></html>`;
+  const blob=new Blob([html],{type:'text/html'});
+  window.open(URL.createObjectURL(blob),'_blank');
+}
+
+function openEditModal(docName) {
+  document.getElementById('modal-content').innerHTML=`
+    <div>
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px">
+        <div style="color:#fff;font-size:17px;font-weight:600">แก้ไขไฟล์เอกสาร</div>
+        <button onclick="closeModal()" style="background:transparent;border:none;color:#6b7280;cursor:pointer;font-size:22px;line-height:1">×</button>
+      </div>
+      <div style="margin-bottom:16px">
+        <div style="font-size:12px;color:#9ca3af;margin-bottom:6px">ชื่อเอกสาร</div>
+        <div style="color:#e2e8f0;font-size:14px;font-weight:500">${docName}</div>
+      </div>
+      <div style="margin-bottom:16px">
+        <div style="font-size:12px;color:#9ca3af;margin-bottom:6px">ไฟล์ปัจจุบัน</div>
+        <div style="background:#111c2b;border-radius:6px;padding:10px 14px;display:flex;align-items:center;gap:10px;border:1px solid #1e293b">
+          <i class="ti ti-file-type-pdf" style="font-size:18px;color:#f97316"></i>
+          <span style="color:#d1d5db;font-size:13px">${docName.replace(/\s+/g,'_')}_original.pdf</span>
+          <button onclick="openFile('${docName}')" style="margin-left:auto;background:transparent;border:none;color:#f97316;cursor:pointer;font-size:12px;display:inline-flex;align-items:center;gap:4px"><i class="ti ti-eye" style="font-size:14px"></i> ดูไฟล์</button>
+        </div>
+      </div>
+      <div style="margin-bottom:24px">
+        <div style="font-size:12px;color:#9ca3af;margin-bottom:6px">อัปโหลดไฟล์ใหม่ <span style="color:#ef4444">*</span></div>
+        <label id="upload-label" style="display:flex;align-items:center;gap:10px;background:#0d1520;border:1px dashed #2a3a4a;border-radius:6px;padding:14px;cursor:pointer" onmouseenter="this.style.borderColor='#f97316'" onmouseleave="if(!this.dataset.filled)this.style.borderColor='#2a3a4a'">
+          <i class="ti ti-upload" style="font-size:18px;color:#9ca3af"></i>
+          <span id="upload-text" style="color:#9ca3af;font-size:13px">เลือกไฟล์ หรือลากมาวางที่นี่ (PDF, JPG, PNG)</span>
+          <input type="file" accept=".pdf,.jpg,.jpeg,.png" style="display:none" onchange="onFileSelected(this)">
+        </label>
+      </div>
+      <div style="display:flex;gap:10px;justify-content:flex-end">
+        <button class="btn-mc" onclick="closeModal()">ยกเลิก</button>
+        <button class="btn-mok" id="btn-upload-confirm" disabled onclick="onUploadConfirm('${docName}')"><i class="ti ti-device-floppy" style="font-size:15px"></i> บันทึก</button>
+      </div>
+    </div>`;
+  document.getElementById('modal').style.display='flex';
+}
+
+function onFileSelected(input) {
+  const file=input.files[0]; if(!file) return;
+  const lbl=document.getElementById('upload-label');
+  document.getElementById('upload-text').textContent=file.name;
+  document.getElementById('upload-text').style.color='#e2e8f0';
+  document.getElementById('btn-upload-confirm').disabled=false;
+  lbl.style.borderColor='#f97316'; lbl.style.borderStyle='solid'; lbl.dataset.filled='1';
+}
+
+function onUploadConfirm(docName) {
+  closeModal();
+  toast(`อัปโหลดไฟล์ "${docName}" สำเร็จ`);
+}
+
+function closeModal() { document.getElementById('modal').style.display='none'; }
+</script>
+</body>
+</html>

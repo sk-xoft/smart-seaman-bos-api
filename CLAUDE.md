@@ -8,7 +8,8 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 ./mvnw test                          # Run all tests
 ./mvnw -Dtest=ClassName test         # Run a single test class
 ./mvnw clean package                 # Build executable JAR in target/
-./mvnw spring-boot:run               # Run locally on port 8080
+./mvnw spring-boot:run               # Run locally on port 8080 (default/prod profile)
+./mvnw spring-boot:run -Dspring-boot.run.profiles=local  # Run with local profile (application-local.properties), port 8081
 ```
 
 Docker:
