@@ -62,6 +62,14 @@ public class Routes {
     public static final String CERT_USER_MOBILE_PREVIEW = "/cert-user-preview";
     public static final String MASTER_DOCUMENTS = "/master/documents";
     public static final String MASTER_COMPANY = "/master/company";
+    public static final String DOCUMENT_REQUEST = "/document-request";
+    public static final String DOCUMENT_REQUEST_DETAIL = "/document-request-detail";
+    public static final String DOCUMENT_REQUEST_INSPECTION = "/document-request-inspection";
+    public static final String DOCUMENT_REQUEST_ACTION = "/document-request-action";
+    public static final String DOCUMENT_REQUEST_DEPT_RESULT = "/document-request-dept-result";
+    public static final String DOCUMENT_REQUEST_PICKUP_ACTION = "/document-request-pickup-action";
+    public static final String DOCUMENT_REQUEST_ATTACHMENT_UPLOAD = "/document-request-attachment-upload";
+    public static final String DOCUMENT_REQUEST_ATTACHMENT_FILE = "/document-request-attachment-file";
 
     public static final String CREATE_CERT = "/documents/certification/create";
     public static final String UPDATE_CERT = "/documents/certification/update";

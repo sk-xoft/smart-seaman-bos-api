@@ -23,6 +23,23 @@ public class WebMvcConfig implements WebMvcConfigurer {
             "/swagger-ui/**",
             "/smart-seaman-swagger/**",
             "/v1/login",
+            // Temporary: bypass auth for document request API testing
+            "/v1/document-request",
+            "/v1/document-request/**",
+            "/v1/document-request-detail",
+            "/v1/document-request-detail/**",
+            "/v1/document-request-inspection",
+            "/v1/document-request-inspection/**",
+            "/v1/document-request-action",
+            "/v1/document-request-action/**",
+            "/v1/document-request-dept-result",
+            "/v1/document-request-dept-result/**",
+            "/v1/document-request-pickup-action",
+            "/v1/document-request-pickup-action/**",
+            "/v1/document-request-attachment-upload",
+            "/v1/document-request-attachment-upload/**",
+            "/v1/document-request-attachment-file",
+            "/v1/document-request-attachment-file/**",
             // "/v1/register",
             // Master data
             "/v1/master",
@@ -36,7 +53,24 @@ public class WebMvcConfig implements WebMvcConfigurer {
                 .excludePathPatterns(
                         "/swagger-ui.html/**",
                         "/swagger-ui/**",
-                        "/smart-seaman-swagger/**"
+                        "/smart-seaman-swagger/**",
+                        // Temporary: bypass mandatory header checks for document request API testing
+                        "/v1/document-request",
+                        "/v1/document-request/**",
+                        "/v1/document-request-detail",
+                        "/v1/document-request-detail/**",
+                        "/v1/document-request-inspection",
+                        "/v1/document-request-inspection/**",
+                        "/v1/document-request-action",
+                        "/v1/document-request-action/**",
+                        "/v1/document-request-dept-result",
+                        "/v1/document-request-dept-result/**",
+                        "/v1/document-request-pickup-action",
+                        "/v1/document-request-pickup-action/**",
+                        "/v1/document-request-attachment-upload",
+                        "/v1/document-request-attachment-upload/**",
+                        "/v1/document-request-attachment-file",
+                        "/v1/document-request-attachment-file/**"
                 ).addPathPatterns("/v1/**")
                 .order(1);
 

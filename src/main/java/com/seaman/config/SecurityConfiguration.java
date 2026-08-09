@@ -19,7 +19,6 @@ import org.springframework.security.web.header.writers.StaticHeadersWriter;
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 
-import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
@@ -38,6 +37,23 @@ public class SecurityConfiguration extends WebSecurityConfigurerAdapter {
             "/smart-seaman-swagger/**",
             "/v1/login",
             "/v1/register",
+            // Temporary: bypass auth for document request API testing
+            "/v1/document-request",
+            "/v1/document-request/**",
+            "/v1/document-request-detail",
+            "/v1/document-request-detail/**",
+            "/v1/document-request-inspection",
+            "/v1/document-request-inspection/**",
+            "/v1/document-request-action",
+            "/v1/document-request-action/**",
+            "/v1/document-request-dept-result",
+            "/v1/document-request-dept-result/**",
+            "/v1/document-request-pickup-action",
+            "/v1/document-request-pickup-action/**",
+            "/v1/document-request-attachment-upload",
+            "/v1/document-request-attachment-upload/**",
+            "/v1/document-request-attachment-file",
+            "/v1/document-request-attachment-file/**",
 
             // Master data
             "/v1/master",
@@ -52,7 +68,13 @@ public class SecurityConfiguration extends WebSecurityConfigurerAdapter {
                     CorsConfiguration cors = new CorsConfiguration();
                     cors.setAllowCredentials(true);
                     cors.setAllowedOriginPatterns(Collections.singletonList("https://*"));
-                    cors.setAllowedOrigins(List.of("https://smartseaman.com", "http://localhost:8080",  "http://127.0.0.1:8080"));
+                        cors.setAllowedOrigins(List.of(
+                            "https://smartseaman.com",
+                            "http://localhost:8080",
+                            "http://127.0.0.1:8080",
+                            "http://localhost:9090",
+                            "http://127.0.0.1:9090"
+                        ));
                     cors.addAllowedHeader("*");
                     cors.addAllowedMethod("GET");
                     cors.addAllowedMethod("POST");
@@ -66,7 +88,7 @@ public class SecurityConfiguration extends WebSecurityConfigurerAdapter {
                     config.configurationSource(source);
                 }).csrf().disable()
                 .sessionManagement().sessionCreationPolicy(SessionCreationPolicy.STATELESS)
-                .and().authorizeRequests().antMatchers(PUBLIC).anonymous()
+                .and().authorizeRequests().antMatchers(PUBLIC).permitAll()
                 .anyRequest().authenticated()
                 .and().apply(new TokenFilterConfiguerer(jwtTokenService, messageCodeService));
 

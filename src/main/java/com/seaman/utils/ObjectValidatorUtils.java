@@ -28,7 +28,11 @@ public class ObjectValidatorUtils {
     public static final java.text.SimpleDateFormat sdf = new java.text.SimpleDateFormat(DATE_FORMAT_YYYY_MM_DD);
 
     public static boolean validateMandatory(String str) {
-        return !("".equals(str.trim()) || str.trim().length() == 0 || "null".equalsIgnoreCase(str));
+        if (str == null) {
+            return false;
+        }
+        String value = str.trim();
+        return !(value.isEmpty() || "null".equalsIgnoreCase(value));
     }
 
     public static boolean validatePattern(String input, String regex) {
