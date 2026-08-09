@@ -10,8 +10,6 @@ import org.springframework.jdbc.core.BeanPropertyRowMapper;
 import org.springframework.jdbc.core.namedparam.MapSqlParameterSource;
 import org.springframework.jdbc.support.GeneratedKeyHolder;
 import org.springframework.stereotype.Repository;
-
-import java.util.Date;
 import java.util.List;
 
 @Repository
@@ -166,9 +164,6 @@ public class NewsRepository extends CommonRepository {
         boolean result = false;
 
         try {
-
-            // The GeneratedKeyHolder object is used to get the auto-incrementing ID.
-            GeneratedKeyHolder generatedKeyHolder = new GeneratedKeyHolder();
 
             String sql = "update m_news set ";
 

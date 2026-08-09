@@ -1,7 +1,6 @@
 package com.seaman.repository;
 
 import com.seaman.constant.AppStatus;
-import com.seaman.entity.NewsEntity;
 import com.seaman.entity.VoucherEntity;
 import com.seaman.exception.BusinessException;
 import com.seaman.model.request.VoucherRequest;

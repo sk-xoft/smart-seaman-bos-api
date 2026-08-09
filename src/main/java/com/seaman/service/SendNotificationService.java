@@ -7,17 +7,13 @@ import com.seaman.event.GlobalEventPublisher;
 import com.seaman.exception.CommonException;
 import com.seaman.model.external.request.FcmMessageData;
 import com.seaman.model.external.request.FcmMessageRequest;
-import com.seaman.model.external.response.FcmMessageResponse;
 import com.seaman.model.request.NotificationModel;
 import com.seaman.model.request.SendNotificationReq;
 import com.seaman.repository.FcmRepository;
 import com.seaman.repository.SendNotificationRepository;
-import com.seaman.utils.ExternalApiUtils;
 import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.http.HttpHeaders;
-import org.springframework.http.HttpMethod;
 import org.springframework.stereotype.Service;
 
 import java.util.*;
@@ -30,7 +26,6 @@ public class SendNotificationService {
 
     private final SendNotificationRepository sendNotificationRepository;
     private final FcmRepository fcmRepository;
-    private final ExternalApiUtils externalApiUtils;
     private final GlobalEventPublisher eventPublisher;
 
 //    public void sendNotiNews(String to, String notiType, String bodyMessage, String valueId, String titleMessage) {

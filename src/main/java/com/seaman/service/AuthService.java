@@ -13,14 +13,12 @@ import com.seaman.utils.DateUtil;
 import com.seaman.utils.FrameworkUtils;
 import com.seaman.utils.SecurityUtils;
 import lombok.RequiredArgsConstructor;
-import org.apache.catalina.security.SecurityUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import javax.servlet.http.HttpServletRequest;
-import java.time.Period;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
@@ -249,7 +247,6 @@ public class AuthService {
 
     public LoginResponse getGroupId(LoginRequest loginRequest) {
         LoginResponse response = new LoginResponse();
-        String correlationId = httpServletRequest.getHeader(AppSys.HEADER_CORRELATION_ID);
 
         try {
             // -- 1. find username in table, And check password
@@ -264,7 +261,6 @@ public class AuthService {
                 throw new BusinessException(AppStatus.EXCEPTION_USERNAME_PASSWORD_INCORRECT, "");
             }
 
-            String sessionId = frameworkUtils.generateUUID();
             String clientSessionId = frameworkUtils.generateUUID();
             Map<String, Object> claims = new HashMap<>();
             claims.put(AppSys.CLAIMS_ISSUER, AppSys.APPLICATION_NAME);

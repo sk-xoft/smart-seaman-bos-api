@@ -2,7 +2,6 @@ package com.seaman.config;
 
 import com.seaman.interceptor.APIInterceptor;
 import com.seaman.interceptor.AuthInterceptor;
-import com.seaman.interceptor.CrudInterceptor;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.web.servlet.config.annotation.InterceptorRegistry;
@@ -15,7 +14,6 @@ public class WebMvcConfig implements WebMvcConfigurer {
     private final APIInterceptor apiInterceptor;
 
     private final AuthInterceptor authInterceptor;
-    private final CrudInterceptor crudInterceptor;
 
     private final String[] NOT_VALIDATE_AUTH = {
             "/actuator/**",

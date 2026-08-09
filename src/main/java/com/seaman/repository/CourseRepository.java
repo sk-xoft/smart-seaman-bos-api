@@ -86,9 +86,7 @@ public class CourseRepository extends CommonRepository {
 
             sql =  sql +  " ORDER BY ONLINE_DATE, sch.COMPANY_SEQ " +
                     "LIMIT :START,:ROW ;";
-         //   logger.info("sql-list-course:" + sql);
             listAll = template.query(sql, namedParameters, new BeanPropertyRowMapper(CourseList.class));
-           // logger.info("Init list all Course." + listAll);
         } catch (Exception ex) {
             logger.error("{}", ex.getMessage());
             throw new BusinessException(AppStatus.EXCEPTION_DATABASE, ex.getMessage());
@@ -130,9 +128,7 @@ public class CourseRepository extends CommonRepository {
             }
 
             sql =  sql +  " ORDER BY ONLINE_DATE, sch.COMPANY_SEQ; " ;
-           // logger.info("sql-list-course:" + sql);
             listAll = template.query(sql, namedParameters, new BeanPropertyRowMapper(CourseList.class));
-           // logger.info("Init list all Course." + listAll);
         } catch (Exception ex) {
             logger.error("{}", ex.getMessage());
             throw new BusinessException(AppStatus.EXCEPTION_DATABASE, ex.getMessage());

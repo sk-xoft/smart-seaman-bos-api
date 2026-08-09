@@ -2,8 +2,6 @@ package com.seaman.model.response;
 
 import com.seaman.entity.VoucherEntity;
 import lombok.Data;
-
-import java.net.Inet4Address;
 import java.util.List;
 
 @Data

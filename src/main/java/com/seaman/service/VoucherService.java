@@ -3,21 +3,17 @@ package com.seaman.service;
 import com.amazonaws.services.s3.AmazonS3;
 import com.seaman.constant.AppStatus;
 import com.seaman.constant.AppSys;
-import com.seaman.entity.NewsEntity;
 import com.seaman.entity.TokenFcmEntity;
 import com.seaman.entity.UsersEntity;
 import com.seaman.entity.VoucherEntity;
 import com.seaman.exception.BusinessException;
 import com.seaman.exception.CommonException;
 import com.seaman.model.request.VoucherRequest;
-import com.seaman.model.response.NewsRs;
 import com.seaman.model.response.VoucherResponse;
-import com.seaman.repository.NewsRepository;
 import com.seaman.repository.SendNotificationRepository;
 import com.seaman.repository.UserMobileRepository;
 import com.seaman.repository.VoucherRepository;
 import com.seaman.utils.FrameworkUtils;
-import lombok.AllArgsConstructor;
 import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -224,9 +220,6 @@ public class VoucherService {
 
             // Insert Trans logs.
             transactionLogsService.insert(transId, bodyReqJson, serviceName, usersEntity.getUsername());
-
-            String fileBanner = frameworkUtils.generateUUID();
-            String fileQr = frameworkUtils.generateUUID();
 
             // Insert table
             VoucherEntity entity = voucherRepository.findById(voucherId);

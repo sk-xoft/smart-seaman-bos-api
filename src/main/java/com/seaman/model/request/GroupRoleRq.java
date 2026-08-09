@@ -1,7 +1,6 @@
 package com.seaman.model.request;
 
 import com.seaman.entity.GroupRoleEntity;
-import com.seaman.model.response.MenuInfo;
 import lombok.Data;
 
 import java.util.List;

@@ -10,8 +10,6 @@ import com.seaman.model.response.GroupRs;
 import com.seaman.service.GroupService;
 import com.seaman.service.MessageCodeService;
 import lombok.RequiredArgsConstructor;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -23,7 +21,6 @@ import static org.springframework.http.ResponseEntity.ok;
 @RestController
 @RequiredArgsConstructor
 public class GroupController extends BaseController {
-    private final Logger log = LoggerFactory.getLogger(this.getClass());
 
     private final GroupService groupService;
 

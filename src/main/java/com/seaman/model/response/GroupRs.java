@@ -1,11 +1,9 @@
 package com.seaman.model.response;
 
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
-import com.seaman.entity.AdminUserEntity;
 import com.seaman.entity.GroupEntity;
 import com.seaman.entity.GroupRoleEntity;
 import lombok.Data;
-
 import java.util.List;
 @Data
 @JsonSerialize(include= JsonSerialize.Inclusion.NON_NULL)

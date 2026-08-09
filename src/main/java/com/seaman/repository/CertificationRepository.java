@@ -242,7 +242,6 @@ public class CertificationRepository  extends CommonRepository {
     public List<CertificateEntity> findByUsersAndCertCodeList(String mobileUserUID, String documentCode) {
 
         List<CertificateEntity> listAll = new ArrayList<>();
-        CertificateEntity item  = new CertificateEntity();
 
         try {
             StringBuilder sql = new StringBuilder();
@@ -264,7 +263,6 @@ public class CertificationRepository  extends CommonRepository {
     public List<CertificateForEditEntity> findByUsersAndCertCodeListForEdit(String mobileUserUID, String documentCode) {
 
         List<CertificateForEditEntity> listAll = new ArrayList<>();
-        CertificateForEditEntity item  = new CertificateForEditEntity();
 
         try {
             StringBuilder sql = new StringBuilder();

@@ -1,20 +1,15 @@
 package com.seaman.service;
 
 import com.amazonaws.services.s3.AmazonS3;
-import com.google.gson.Gson;
 import com.seaman.constant.AppStatus;
 import com.seaman.constant.AppSys;
 import com.seaman.entity.BannerEntity;
-import com.seaman.entity.FormEntity;
 import com.seaman.entity.UsersEntity;
 import com.seaman.exception.BusinessException;
 import com.seaman.exception.CommonException;
 import com.seaman.model.request.BannerRq;
-import com.seaman.model.request.FormRq;
 import com.seaman.model.response.BannerRs;
-import com.seaman.model.response.FormRs;
 import com.seaman.repository.BannerRepository;
-import com.seaman.repository.NewsRepository;
 import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -34,7 +29,6 @@ public class BannerService {
     private final HttpServletRequest httpServletRequest;
     private final BannerRepository bannerRepository;
     private  final TransactionLogsService transactionLogsService;
-    private final JwtTokenService jwtTokenUtil;
     @Value("${object.store.bucket}")
     private String bucketName;
 

@@ -30,9 +30,7 @@ public class BannerRepository extends CommonRepository {
                     .addValue("START", start)
                     .addValue("ROW",row);
 
-            //log.info("sql-list-news:" + SELECT_ALL_NEWS);
             listAll = template.query(SELECT_ALL, namedParameters, new BeanPropertyRowMapper(BannerEntity.class));
-            // log.info("Init list all News." + listAll);
         } catch (Exception ex) {
             log.error("{}", ex.getMessage());
             throw new BusinessException(AppStatus.EXCEPTION_DATABASE, ex.getMessage());

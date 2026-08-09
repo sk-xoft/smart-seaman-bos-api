@@ -2,7 +2,6 @@ package com.seaman.controller;
 
 import lombok.RequiredArgsConstructor;
 import org.apache.commons.io.IOUtils;
-import org.json.simple.JSONObject;
 import org.springframework.core.io.ClassPathResource;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;

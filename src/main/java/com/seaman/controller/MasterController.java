@@ -8,8 +8,6 @@ import com.seaman.model.response.*;
 import com.seaman.service.MasterDataService;
 import com.seaman.service.MessageCodeService;
 import lombok.RequiredArgsConstructor;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import javax.servlet.http.HttpServletRequest;
@@ -19,7 +17,6 @@ import static org.springframework.http.ResponseEntity.ok;
 @RequiredArgsConstructor
 public class MasterController extends BaseController {
 
-    private final Logger log = LoggerFactory.getLogger(this.getClass());
     private final MasterDataService masterDataService;
     private final MessageCodeService messageCodeService;
 

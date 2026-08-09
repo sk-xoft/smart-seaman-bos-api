@@ -1,7 +1,6 @@
 package com.seaman.model.response;
 
 import com.seaman.entity.UserMobileEntity;
-import io.swagger.v3.oas.models.security.SecurityScheme;
 import lombok.Data;
 import java.util.List;
 

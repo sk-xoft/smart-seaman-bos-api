@@ -1,7 +1,6 @@
 package com.seaman.entity;
 
 import lombok.Data;
-import org.springframework.cloud.client.loadbalancer.LoadBalancerProperties;
 
 import java.util.Date;
 

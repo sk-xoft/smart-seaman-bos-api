@@ -3,17 +3,13 @@ package com.seaman.repository;
 import com.seaman.constant.AppStatus;
 import com.seaman.entity.*;
 import com.seaman.exception.BusinessException;
-import com.seaman.model.request.CourseRq;
 import com.seaman.model.request.GroupRequest;
 import com.seaman.model.request.GroupRoleRq;
-import com.seaman.model.response.CourseList;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.jdbc.core.BeanPropertyRowMapper;
 import org.springframework.jdbc.core.namedparam.MapSqlParameterSource;
 import org.springframework.stereotype.Repository;
-
-import javax.swing.*;
 import java.util.Date;
 import java.util.List;
 
@@ -299,9 +295,7 @@ public class GroupRepository extends CommonRepository {
 
             sql =  sql +  " ORDER BY GROUP_NAME " +
                     "LIMIT :START,:ROW ;";
-         //   log.info("sql-list-group:" + sql);
             listAll = template.query(sql, namedParameters, new BeanPropertyRowMapper(GroupEntity.class));
-         //  log.info("Init list all group." + listAll);
         } catch (Exception ex) {
             log.error("{}", ex.getMessage());
             throw new BusinessException(AppStatus.EXCEPTION_DATABASE, ex.getMessage());
@@ -331,9 +325,7 @@ public class GroupRepository extends CommonRepository {
             }
 
             sql =  sql +  " ORDER BY GROUP_NAME " ;
-         //   log.info("sql-list-group:" + sql);
             listAll = template.query(sql, namedParameters, new BeanPropertyRowMapper(GroupEntity.class));
-         //   log.info("Init list all group." + listAll);
         } catch (Exception ex) {
             log.error("{}", ex.getMessage());
             throw new BusinessException(AppStatus.EXCEPTION_DATABASE, ex.getMessage());
@@ -349,7 +341,6 @@ public class GroupRepository extends CommonRepository {
             MapSqlParameterSource namedParameters = new MapSqlParameterSource();
 
             listAll = template.query(sql , namedParameters, new BeanPropertyRowMapper(GroupEntity.class));
-         //   log.info("listAllDocument:" + listAll);
         } catch (Exception ex) {
             log.error("{}", ex.getMessage());
             throw new BusinessException(AppStatus.EXCEPTION_DATABASE, ex.getMessage());

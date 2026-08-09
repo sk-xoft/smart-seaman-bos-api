@@ -1,10 +1,8 @@
 package com.seaman.repository;
 
 import com.seaman.constant.AppStatus;
-import com.seaman.constant.AppSys;
 import com.seaman.entity.InterceptorEntity;
 import com.seaman.exception.BusinessException;
-import com.seaman.service.MessageCodeService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.jdbc.core.BeanPropertyRowMapper;
@@ -57,9 +55,3 @@ public class InterceptorRepository extends CommonRepository {
     }
 
 }
-
-
-
-
-
-
