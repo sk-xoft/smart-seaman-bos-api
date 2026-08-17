@@ -100,4 +100,5 @@ public class Routes {
     public static final String CREATE_GROUP_ROLE = "/group/add-detail";
     public static final String UPDATE_GROUP = "/group/update";
     public static final String DELETE_GROUP = "/group/delete";
+    public static final String DOCUMENT_RENEWAL_DETAIL = "/document-renewals/{requestNo}";
 }
