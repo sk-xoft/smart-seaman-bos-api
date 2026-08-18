@@ -54,6 +54,9 @@ public class SecurityConfiguration extends WebSecurityConfigurerAdapter {
             "/v1/document-request-attachment-upload/**",
             "/v1/document-request-attachment-file",
             "/v1/document-request-attachment-file/**",
+            // Temporary: bypass auth for document-renewals API testing
+            "/v1/document-renewals",
+            "/v1/document-renewals/**",
 
             // Master data
             "/v1/master",

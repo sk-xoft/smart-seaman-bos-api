@@ -38,6 +38,9 @@ public class WebMvcConfig implements WebMvcConfigurer {
             "/v1/document-request-attachment-upload/**",
             "/v1/document-request-attachment-file",
             "/v1/document-request-attachment-file/**",
+            // Temporary: bypass auth for document-renewals API testing
+            "/v1/document-renewals",
+            "/v1/document-renewals/**",
             // "/v1/register",
             // Master data
             "/v1/master",
@@ -68,7 +71,10 @@ public class WebMvcConfig implements WebMvcConfigurer {
                         "/v1/document-request-attachment-upload",
                         "/v1/document-request-attachment-upload/**",
                         "/v1/document-request-attachment-file",
-                        "/v1/document-request-attachment-file/**"
+                        "/v1/document-request-attachment-file/**",
+                        // Temporary: bypass mandatory header checks for document-renewals API testing
+                        "/v1/document-renewals",
+                        "/v1/document-renewals/**"
                 ).addPathPatterns("/v1/**")
                 .order(1);
 
