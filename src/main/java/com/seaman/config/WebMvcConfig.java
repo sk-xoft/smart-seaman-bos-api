@@ -41,6 +41,9 @@ public class WebMvcConfig implements WebMvcConfigurer {
             // Temporary: bypass auth for document-renewals API testing
             "/v1/document-renewals",
             "/v1/document-renewals/**",
+            // Temporary: bypass auth for user-mobile profile
+            "/v1/user-mobile",
+            "/v1/user-mobile/**",
             // "/v1/register",
             // Master data
             "/v1/master",
@@ -74,7 +77,10 @@ public class WebMvcConfig implements WebMvcConfigurer {
                         "/v1/document-request-attachment-file/**",
                         // Temporary: bypass mandatory header checks for document-renewals API testing
                         "/v1/document-renewals",
-                        "/v1/document-renewals/**"
+                        "/v1/document-renewals/**",
+                        // Temporary: bypass header checks for user-mobile profile
+                        "/v1/user-mobile",
+                        "/v1/user-mobile/**"
                 ).addPathPatterns("/v1/**")
                 .order(1);
 

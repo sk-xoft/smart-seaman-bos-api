@@ -57,6 +57,9 @@ public class SecurityConfiguration extends WebSecurityConfigurerAdapter {
             // Temporary: bypass auth for document-renewals API testing
             "/v1/document-renewals",
             "/v1/document-renewals/**",
+            // Temporary: bypass auth for user-mobile profile
+            "/v1/user-mobile",
+            "/v1/user-mobile/**",
 
             // Master data
             "/v1/master",
