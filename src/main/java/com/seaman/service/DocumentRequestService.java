@@ -16,15 +16,22 @@ import com.seaman.model.response.DocumentRequestDetailRs;
 import com.seaman.model.response.DocumentRequestRs;
 import com.seaman.model.response.DocumentRequestStepperRs;
 import com.seaman.repository.DocumentRequestRepository;
+import com.seaman.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
+import net.sf.jmimemagic.Magic;
 import org.springframework.beans.factory.annotation.Value;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.support.TransactionSynchronization;
+import org.springframework.transaction.support.TransactionSynchronizationManager;
 import org.springframework.web.multipart.MultipartFile;
 
 import javax.servlet.http.HttpServletRequest;
+import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.sql.Timestamp;
@@ -36,6 +43,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
 
 @Service
@@ -44,7 +52,11 @@ public class DocumentRequestService {
 
     private final Logger log = LoggerFactory.getLogger(this.getClass());
     private static final String SYSTEM_ACTION_UUID = "00000000-0000-0000-0000-000000000000";
+    private static final long MAX_ATTACHMENT_FILE_SIZE = 10L * 1024 * 1024;
+    private static final Set<String> ALLOWED_ATTACHMENT_MIME_TYPES =
+            Set.of("image/jpeg", "image/png", "application/pdf");
     private final DocumentRequestRepository documentRequestRepository;
+        private final UserRepository userRepository;
     private final HttpServletRequest httpServletRequest;
     private final AmazonS3 getS3;
 
@@ -53,6 +65,9 @@ public class DocumentRequestService {
 
     @Value("${object.store.path.root}")
     private String objectRootPath;
+
+    @Value("${object.store.path.request.items}")
+    private String requestItemPathTemplate;
 
     public DocumentRequestRs getAllDocumentRequest(
             Integer size,
@@ -255,42 +270,18 @@ public class DocumentRequestService {
             String checkedBy = resolveCheckedBy();
 
             int updatedRows = documentRequestRepository.updateInspectionResults(requestNo, normalizedInspections);
-            boolean allRequiredPassed = documentRequestRepository.areAllRequiredDocumentItemsPassed(requestNo);
-
-            String autoStatusId = null;
-            boolean autoStatusUpdated = false;
-            if (allRequiredPassed) {
-                autoStatusId = documentRequestRepository.findDocumentStatusIdByThaiName("รอผลกรมเจ้าท่า");
-                String currentStatusId = requestSummary.get("document_status_id") == null ? null : String.valueOf(requestSummary.get("document_status_id"));
-
-                if (autoStatusId != null && !autoStatusId.isEmpty() && !autoStatusId.equals(currentStatusId)) {
-                    int statusUpdatedRows = documentRequestRepository.updateDocumentRequestStatus(requestNo, autoStatusId, false);
-                    if (statusUpdatedRows > 0) {
-                        autoStatusUpdated = true;
-
-                        String requestId = requestSummary.get("request_id") == null ? null : String.valueOf(requestSummary.get("request_id"));
-                        String actionedBy = resolveActionedBy();
-                        if (requestId != null && !requestId.trim().isEmpty()) {
-                            documentRequestRepository.insertDocumentTransaction(
-                                    requestId,
-                                    "CHECK_DOCS",
-                                    currentStatusId,
-                                    autoStatusId,
-                                    "All required document items passed",
-                                    actionedBy
-                            );
-                        }
-                    }
-                }
+            if (updatedRows != normalizedInspections.size()) {
+                throw new BusinessException(AppStatus.EXCEPTION_DATABASE, "Can not save all inspection results.");
             }
+            boolean allRequiredPassed = documentRequestRepository.areAllRequiredDocumentItemsPassed(requestNo);
 
             Map<String, Object> response = new HashMap<>();
             response.put("requestNo", requestNo);
             response.put("updatedRows", updatedRows);
             response.put("checkedBy", checkedBy);
             response.put("allRequiredPassed", allRequiredPassed);
-            response.put("statusUpdated", autoStatusUpdated);
-            response.put("statusId", autoStatusUpdated ? autoStatusId : requestSummary.get("document_status_id"));
+            response.put("statusUpdated", false);
+            response.put("statusId", requestSummary.get("document_status_id"));
             return response;
         } catch (CommonException ce) {
             log.error("{}", ce.getMessage());
@@ -570,11 +561,9 @@ public class DocumentRequestService {
                 throw new BusinessException(AppStatus.EXCEPTION_GLOBAL, "Please provide upload {file}.");
             }
 
-            String originalFilename = file.getOriginalFilename() == null ? "" : file.getOriginalFilename().trim();
-            String extension = extractExtension(originalFilename);
-            if (!isAllowedAttachmentExtension(extension)) {
-                throw new BusinessException(AppStatus.EXCEPTION_GLOBAL, "{file} supports only pdf/png/jpg/jpeg.");
-            }
+            String originalFilename = safeOriginalFileName(file.getOriginalFilename());
+            byte[] content = validateAttachmentFile(file);
+            String mimeType = detectAttachmentMimeType(content);
 
             Map<String, Object> requestSummary = resolveRequestSummary(requestNoFilter);
             if (requestSummary == null) {
@@ -587,18 +576,33 @@ public class DocumentRequestService {
             }
 
             String documentName = String.valueOf(attachmentTarget.get("document_name"));
+            String requestItemId = String.valueOf(attachmentTarget.get("request_item_id"));
+            String documentMasterRequestItemCode = String.valueOf(
+                    attachmentTarget.get("document_master_request_item_code")
+            );
 
-            String safeFileName = UUID.randomUUID().toString().replace("-", "") + "." + extension;
-            String keyName = buildAttachmentObjectKey(requestNoFilter, sortOrder, safeFileName);
+            String keyName = buildAttachmentObjectKey(requestItemId);
+            Map<String, Object> previousAttachment =
+                    documentRequestRepository.findLatestUploadedAttachmentByRequestNoAndSortOrder(
+                            requestNoFilter,
+                            sortOrder
+                    );
+            Object previousFilePath = previousAttachment == null ? null : previousAttachment.get("file_path");
 
-            uploadToObjectStorage(keyName, file);
+            uploadToObjectStorage(keyName, content, mimeType);
+            registerAttachmentStorageCleanup(
+                    keyName,
+                    previousFilePath == null ? null : String.valueOf(previousFilePath)
+            );
 
-            String filePath = "/" + bucketName + "/" + keyName;
             int affectedRows = documentRequestRepository.upsertRequestItemFile(
-                    requestNoFilter,
-                    documentName,
+                    requestItemId,
+                    documentMasterRequestItemCode,
                     sortOrder,
-                    filePath
+                    keyName,
+                    originalFilename,
+                    mimeType,
+                    content.length
             );
 
             if (affectedRows <= 0) {
@@ -608,7 +612,7 @@ public class DocumentRequestService {
             Map<String, Object> response = new HashMap<>();
             response.put("requestNo", requestNoFilter);
             response.put("sortOrder", sortOrder);
-            response.put("filePath", filePath);
+            response.put("filePath", keyName);
             response.put("fileUploaded", true);
             response.put("documentName", documentName);
             return response;
@@ -642,8 +646,18 @@ public class DocumentRequestService {
             }
 
             StoredObjectLocation location = parseStoredObjectLocation(filePath);
-            String resolvedFileName = extractFileName(location.key);
-            String contentType = inferContentType(resolvedFileName);
+                String originalFileName = attachment.get("original_file_name") == null
+                    ? null
+                    : String.valueOf(attachment.get("original_file_name")).trim();
+                String resolvedFileName = originalFileName == null || originalFileName.isEmpty()
+                    ? extractFileName(location.key)
+                    : originalFileName;
+                String storedMimeType = attachment.get("mime_type") == null
+                    ? null
+                    : String.valueOf(attachment.get("mime_type")).trim();
+                String contentType = storedMimeType == null || storedMimeType.isEmpty()
+                    ? inferContentType(resolvedFileName)
+                    : storedMimeType;
 
             try (S3Object object = getS3.getObject(location.bucket, location.key);
                  InputStream inputStream = object.getObjectContent()) {
@@ -699,9 +713,8 @@ public class DocumentRequestService {
     }
 
     private String resolveCheckedBy() {
-        Object userObj = httpServletRequest.getAttribute("userObject");
-        if (userObj instanceof UsersEntity) {
-            UsersEntity user = (UsersEntity) userObj;
+        UsersEntity user = resolveAuthenticatedUser();
+        if (user != null) {
             if (user.getUsername() != null && !user.getUsername().trim().isEmpty()) {
                 return user.getUsername().trim();
             }
@@ -714,15 +727,33 @@ public class DocumentRequestService {
     }
 
     private String resolveActionedBy() {
-        Object userObj = httpServletRequest.getAttribute("userObject");
-        if (userObj instanceof UsersEntity) {
-            UsersEntity user = (UsersEntity) userObj;
+        UsersEntity user = resolveAuthenticatedUser();
+        if (user != null) {
             if (user.getAdminUuid() != null && !user.getAdminUuid().trim().isEmpty()) {
                 return user.getAdminUuid().trim();
             }
         }
 
         return null;
+    }
+
+    private UsersEntity resolveAuthenticatedUser() {
+        Object userObj = httpServletRequest.getAttribute("userObject");
+        if (userObj instanceof UsersEntity) {
+            return (UsersEntity) userObj;
+        }
+
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        if (authentication == null || !authentication.isAuthenticated()) {
+            return null;
+        }
+
+        String username = authentication.getName();
+        if (username == null || username.trim().isEmpty() || "anonymousUser".equals(username)) {
+            return null;
+        }
+
+        return userRepository.findByUsername(username.trim());
     }
 
     private String resolveActionedByOrSystem() {
@@ -962,8 +993,8 @@ public class DocumentRequestService {
                 || "jpeg".equals(extension);
     }
 
-    private String buildAttachmentObjectKey(String requestNo, Integer sortOrder, String safeFileName) {
-        return "smart-seaman-bos/" + requestNo + "/" + safeFileName;
+    private String buildAttachmentObjectKey(String requestItemId) {
+        return String.format(requestItemPathTemplate, requestItemId, UUID.randomUUID());
     }
 
     private StoredObjectLocation parseStoredObjectLocation(String storedPath) {
@@ -972,18 +1003,19 @@ public class DocumentRequestService {
             normalized = normalized.substring(1);
         }
 
-        int slashIndex = normalized.indexOf('/');
-        if (slashIndex <= 0 || slashIndex >= normalized.length() - 1) {
+        if (normalized.isEmpty()) {
             throw new BusinessException(AppStatus.EXCEPTION_GLOBAL, "Invalid attachment file path.");
         }
 
-        String bucket = normalized.substring(0, slashIndex);
-        String key = normalized.substring(slashIndex + 1);
-        if (bucket.trim().isEmpty() || key.trim().isEmpty()) {
+        String bucketPrefix = bucketName + "/";
+        String key = normalized.startsWith(bucketPrefix)
+                ? normalized.substring(bucketPrefix.length())
+                : normalized;
+        if (key.trim().isEmpty()) {
             throw new BusinessException(AppStatus.EXCEPTION_GLOBAL, "Invalid attachment file path.");
         }
 
-        return new StoredObjectLocation(bucket, key);
+        return new StoredObjectLocation(bucketName, key);
     }
 
     private String extractFileName(String objectKey) {
@@ -1024,13 +1056,48 @@ public class DocumentRequestService {
         }
     }
 
-    private void uploadToObjectStorage(String keyName, MultipartFile file) {
-        try (InputStream inputStream = file.getInputStream()) {
-            ObjectMetadata metadata = new ObjectMetadata();
-            metadata.setContentLength(file.getSize());
-            if (file.getContentType() != null && !file.getContentType().trim().isEmpty()) {
-                metadata.setContentType(file.getContentType().trim());
+    private byte[] validateAttachmentFile(MultipartFile file) {
+        try {
+            if (file.getSize() <= 0 || file.getSize() > MAX_ATTACHMENT_FILE_SIZE) {
+                throw new BusinessException(AppStatus.EXCEPTION_GLOBAL, "{file} must not exceed 10 MB.");
             }
+            byte[] content = file.getBytes();
+            detectAttachmentMimeType(content);
+            return content;
+        } catch (CommonException ex) {
+            throw ex;
+        } catch (Exception ex) {
+            throw new BusinessException(AppStatus.EXCEPTION_GLOBAL, "Can not read upload {file}.");
+        }
+    }
+
+    private String detectAttachmentMimeType(byte[] content) {
+        try {
+            String mimeType = Magic.getMagicMatch(content).getMimeType().toLowerCase(Locale.ROOT);
+            if (!ALLOWED_ATTACHMENT_MIME_TYPES.contains(mimeType)) {
+                throw new BusinessException(AppStatus.EXCEPTION_GLOBAL, "{file} supports only pdf/png/jpg/jpeg.");
+            }
+            return mimeType;
+        } catch (CommonException ex) {
+            throw ex;
+        } catch (Exception ex) {
+            throw new BusinessException(AppStatus.EXCEPTION_GLOBAL, "{file} supports only pdf/png/jpg/jpeg.");
+        }
+    }
+
+    private String safeOriginalFileName(String fileName) {
+        if (fileName == null || fileName.trim().isEmpty()) {
+            return "file";
+        }
+        String cleaned = fileName.replace("\\", "_").replace("/", "_").trim();
+        return cleaned.length() > 255 ? cleaned.substring(0, 255) : cleaned;
+    }
+
+    private void uploadToObjectStorage(String keyName, byte[] content, String mimeType) {
+        try (InputStream inputStream = new ByteArrayInputStream(content)) {
+            ObjectMetadata metadata = new ObjectMetadata();
+            metadata.setContentLength(content.length);
+            metadata.setContentType(mimeType);
 
             getS3.putObject(bucketName, keyName, inputStream, metadata);
         } catch (IOException ex) {
@@ -1039,6 +1106,35 @@ public class DocumentRequestService {
         } catch (Exception ex) {
             log.error("Object storage upload failed. bucket={}, key={}, message={}", bucketName, keyName, ex.getMessage(), ex);
             throw new BusinessException(AppStatus.EXCEPTION_GLOBAL, "Can not upload file to object storage: " + ex.getMessage());
+        }
+    }
+
+    private void registerAttachmentStorageCleanup(String newKey, String previousStoredPath) {
+        TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
+            @Override
+            public void afterCommit() {
+                if (previousStoredPath != null && !previousStoredPath.trim().isEmpty()) {
+                    StoredObjectLocation previous = parseStoredObjectLocation(previousStoredPath);
+                    if (!newKey.equals(previous.key)) {
+                        safeDeleteObject(previous.bucket, previous.key);
+                    }
+                }
+            }
+
+            @Override
+            public void afterCompletion(int status) {
+                if (status != STATUS_COMMITTED) {
+                    safeDeleteObject(bucketName, newKey);
+                }
+            }
+        });
+    }
+
+    private void safeDeleteObject(String bucket, String key) {
+        try {
+            getS3.deleteObject(bucket, key);
+        } catch (Exception ex) {
+            log.warn("Object storage cleanup failed. bucket={}, key={}, message={}", bucket, key, ex.getMessage());
         }
     }
 }

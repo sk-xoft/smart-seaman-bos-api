@@ -10,4 +10,11 @@ public class DocumentRenewalDeptSubmissionResponse {
     private String availableFromDate;
     private String receivedFromDeptDate;
     private String recordedAt;
+    private String action;
+    private String actionedAt;
+    private String actionedBy;
+    private String actionedByUsername;
+    private String actionedByFirstName;
+    private String actionedByLastName;
+    private String actionedByMobileNumber;
 }

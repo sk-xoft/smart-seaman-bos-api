@@ -118,10 +118,14 @@ public class DocumentRenewalRepository extends CommonRepository {
             MapSqlParameterSource params = new MapSqlParameterSource()
                     .addValue("REQUEST_ID", requestId);
 
-            String sql = "SELECT tracking_no, carrier, shipped_date, delivery_status, " +
-                    "shipped_recorded_at, delivered_at " +
-                    "FROM m_delivery " +
-                    "WHERE request_id COLLATE utf8mb4_unicode_ci = :REQUEST_ID COLLATE utf8mb4_unicode_ci " +
+                String sql = "SELECT d.tracking_no, d.carrier, d.shipped_date, d.delivery_status, " +
+                    "d.shipped_recorded_at, d.shipped_by, d.delivered_at, " +
+                    "au.USERNAME AS shipped_by_username, au.FIRST_NAME AS shipped_by_first_name, " +
+                    "au.LAST_NAME AS shipped_by_last_name, au.MOBILE_NUMBER AS shipped_by_mobile_number " +
+                    "FROM m_delivery d " +
+                    "LEFT JOIN m_admin_users au " +
+                    "  ON au.ADMIN_UUID COLLATE utf8mb4_unicode_ci = d.shipped_by COLLATE utf8mb4_unicode_ci " +
+                    "WHERE d.request_id COLLATE utf8mb4_unicode_ci = :REQUEST_ID COLLATE utf8mb4_unicode_ci " +
                     "LIMIT 1";
 
             List<Map<String, Object>> results = template.queryForList(sql, params);

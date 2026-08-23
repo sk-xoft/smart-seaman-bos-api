@@ -11,13 +11,16 @@ import com.seaman.model.response.DocumentRenewalDetailItemResponse;
 import com.seaman.model.response.DocumentRenewalDetailResponse;
 import com.seaman.model.response.DocumentRenewalSummaryStatusResponse;
 import com.seaman.repository.DocumentRenewalRepository;
+import com.seaman.repository.DocumentRequestRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.time.ZoneId;
+import java.time.ZoneOffset;
 import java.time.format.DateTimeFormatter;
 import java.util.Date;
 import java.util.List;
@@ -30,6 +33,8 @@ import java.util.stream.Collectors;
 public class DocumentRenewalDetailService {
 
     private final DocumentRenewalRepository repository;
+    private final DocumentRequestRepository documentRequestRepository;
+    private final ProfileService profileService;
     private final AmazonS3 getS3;
 
     @Value("${object.store.bucket}")
@@ -97,13 +102,16 @@ public class DocumentRenewalDetailService {
         response.setSubmittedAt(formatDatetime(row.get("submitted_at")));
         response.setAmount((BigDecimal) row.get("amount"));
         response.setIsResubmit(toBoolean(row.get("is_resubmit")));
+        response.setProfile(profileService.getProfile(response.getMobileUserUuid()));
+        response.setDeliverAddress(documentRequestRepository.ensureDeliveryAddress(response.getMobileUserUuid()));
         response.setItems(itemRows.stream()
                 .map(item -> mapItem(item, filesByItemId))
                 .collect(Collectors.toList()));
 
         if (DEPT_SUBMISSION_STATUSES.contains(statusCode)) {
-            Map<String, Object> deptRow = repository.findDeptSubmissionByRequestId(requestId);
+            Map<String, Object> deptRow = documentRequestRepository.findLatestDepartmentSubmissionInfo(requestId);
             if (deptRow != null) response.setDeptSubmission(mapDeptSubmission(deptRow));
+            response.setDeptResult(buildDeptResult(requestId));
         }
         if (DELIVERY_STATUSES.contains(statusCode)) {
             Map<String, Object> deliveryRow = repository.findDeliveryByRequestId(requestId);
@@ -151,10 +159,13 @@ public class DocumentRenewalDetailService {
 
     private DocumentRenewalDeptSubmissionResponse mapDeptSubmission(Map<String, Object> row) {
         DocumentRenewalDeptSubmissionResponse r = new DocumentRenewalDeptSubmissionResponse();
-        r.setSubmittedToDeptDate(formatDate(row.get("submitted_to_dept_date")));
-        r.setAvailableFromDate(formatDate(row.get("available_from_date")));
-        r.setReceivedFromDeptDate(formatDate(row.get("received_from_dept_date")));
-        r.setRecordedAt(formatDatetime(row.get("recorded_at")));
+        r.setAction(str(row, "action"));
+        r.setActionedAt(formatDatetime(row.get("actioned_at")));
+        r.setActionedBy(str(row, "actioned_by"));
+        r.setActionedByUsername(str(row, "actioned_by_username"));
+        r.setActionedByFirstName(str(row, "actioned_by_first_name"));
+        r.setActionedByLastName(str(row, "actioned_by_last_name"));
+        r.setActionedByMobileNumber(str(row, "actioned_by_mobile_number"));
         return r;
     }
 
@@ -163,10 +174,45 @@ public class DocumentRenewalDetailService {
         r.setTrackingNo(str(row, "tracking_no"));
         r.setCarrier(str(row, "carrier"));
         r.setShippedDate(formatDate(row.get("shipped_date")));
+        r.setShippedDateValue(str(row, "shipped_date"));
         r.setDeliveryStatus(str(row, "delivery_status"));
         r.setShippedRecordedAt(formatDatetime(row.get("shipped_recorded_at")));
+        r.setShippedBy(str(row, "shipped_by"));
+        r.setShippedByUsername(str(row, "shipped_by_username"));
+        r.setShippedByFirstName(str(row, "shipped_by_first_name"));
+        r.setShippedByLastName(str(row, "shipped_by_last_name"));
+        r.setShippedByMobileNumber(str(row, "shipped_by_mobile_number"));
         r.setDeliveredAt(formatDatetime(row.get("delivered_at")));
         return r;
+    }
+
+    private Map<String, Object> buildDeptResult(String requestId) {
+        Map<String, Object> resultInfo = documentRequestRepository.findLatestDepartmentResultInfo(requestId);
+        Map<String, Object> receivedInfo = documentRequestRepository.findLatestDepartmentReceiveInfo(requestId);
+        if (resultInfo == null && receivedInfo == null) {
+            return null;
+        }
+
+        Map<String, Object> result = new java.util.LinkedHashMap<>();
+        if (resultInfo != null) {
+            result.put("note", str(resultInfo, "note"));
+            result.put("actioned_at", formatDatetime(resultInfo.get("actioned_at")));
+            result.put("actioned_by", str(resultInfo, "actioned_by"));
+            result.put("actioned_by_username", str(resultInfo, "actioned_by_username"));
+            result.put("actioned_by_first_name", str(resultInfo, "actioned_by_first_name"));
+            result.put("actioned_by_last_name", str(resultInfo, "actioned_by_last_name"));
+            result.put("actioned_by_mobile_number", str(resultInfo, "actioned_by_mobile_number"));
+        }
+        if (receivedInfo != null) {
+            result.put("received_date", str(receivedInfo, "note"));
+            result.put("received_actioned_at", formatDatetime(receivedInfo.get("actioned_at")));
+            result.put("received_actioned_by", str(receivedInfo, "actioned_by"));
+            result.put("received_actioned_by_username", str(receivedInfo, "actioned_by_username"));
+            result.put("received_actioned_by_first_name", str(receivedInfo, "actioned_by_first_name"));
+            result.put("received_actioned_by_last_name", str(receivedInfo, "actioned_by_last_name"));
+            result.put("received_actioned_by_mobile_number", str(receivedInfo, "actioned_by_mobile_number"));
+        }
+        return result;
     }
 
     private String buildSignedUrl(String filePath) {
@@ -181,6 +227,9 @@ public class DocumentRenewalDetailService {
 
     private String formatDatetime(Object value) {
         if (value == null) return null;
+        if (value instanceof LocalDateTime) {
+            return DATETIME_FMT.format(((LocalDateTime) value).atZone(ZoneOffset.UTC));
+        }
         if (value instanceof java.sql.Timestamp) {
             return DATETIME_FMT.format(((java.sql.Timestamp) value).toInstant());
         }

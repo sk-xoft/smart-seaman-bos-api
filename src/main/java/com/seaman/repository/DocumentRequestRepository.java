@@ -243,6 +243,8 @@ public class DocumentRequestRepository extends CommonRepository {
 
             StringBuilder sql = new StringBuilder();
             sql.append("SELECT dr.request_no AS request_no, dr.mobile_user_uuid AS mobile_user_uuid, ");
+            sql.append("dri.id AS request_item_id, ");
+            sql.append("dri.document_master_request_item_code AS document_master_request_item_code, ");
             sql.append("mri.document_master_items_name AS document_name, ");
             sql.append("dsr.sort_order AS sort_order ");
             sql.append("FROM m_document_request dr ");
@@ -253,7 +255,7 @@ public class DocumentRequestRepository extends CommonRepository {
             sql.append("LEFT JOIN m_document_master_request_item mri ");
             sql.append("ON mri.document_master_items_code COLLATE utf8mb4_unicode_ci = dsr.document_master_request_item_code COLLATE utf8mb4_unicode_ci ");
             sql.append("AND mri.is_active = 'YES' ");
-            sql.append("LEFT JOIN m_document_request_items dri ");
+            sql.append("JOIN m_document_request_items dri ");
             sql.append("ON dri.request_no COLLATE utf8mb4_unicode_ci = dr.request_no COLLATE utf8mb4_unicode_ci ");
             sql.append("AND dri.document_master_request_item_code COLLATE utf8mb4_unicode_ci = dsr.document_master_request_item_code COLLATE utf8mb4_unicode_ci ");
             sql.append("WHERE dr.request_no COLLATE utf8mb4_unicode_ci = :REQUEST_NO COLLATE utf8mb4_unicode_ci ");
@@ -269,37 +271,37 @@ public class DocumentRequestRepository extends CommonRepository {
         }
     }
 
-    public int upsertRequestItemFile(String requestNo, String documentName, Integer sortOrder, String filePath) {
+    public int upsertRequestItemFile(String requestItemId,
+                                     String documentMasterRequestItemCode,
+                                     Integer sortOrder,
+                                     String filePath,
+                                     String originalFileName,
+                                     String mimeType,
+                                     long fileSize) {
         try {
-            MapSqlParameterSource updateParams = new MapSqlParameterSource()
-                    .addValue("REQUEST_NO", requestNo)
-                    .addValue("DOCUMENT_NAME", documentName)
-                    .addValue("FILE_PATH", filePath);
+            MapSqlParameterSource namedParameters = new MapSqlParameterSource()
+                    .addValue("REQUEST_ITEM_ID", requestItemId)
+                    .addValue("DOCUMENT_MASTER_REQUEST_ITEM_CODE", documentMasterRequestItemCode)
+                    .addValue("SORT_ORDER", sortOrder)
+                    .addValue("FILE_PATH", filePath)
+                    .addValue("ORIGINAL_FILE_NAME", originalFileName)
+                    .addValue("MIME_TYPE", mimeType)
+                    .addValue("FILE_SIZE", fileSize);
 
-            StringBuilder updateSql = new StringBuilder();
-            updateSql.append("UPDATE m_document_request_items ");
-            updateSql.append("SET file_uploaded = 1, file_path = :FILE_PATH, file_uploaded_at = NOW(), is_updated = 1, updated_at = NOW() ");
-            updateSql.append("WHERE request_no COLLATE utf8mb4_unicode_ci = :REQUEST_NO COLLATE utf8mb4_unicode_ci ");
-            updateSql.append("AND document_name COLLATE utf8mb4_unicode_ci = :DOCUMENT_NAME COLLATE utf8mb4_unicode_ci");
+            StringBuilder sql = new StringBuilder();
+            sql.append("INSERT INTO m_document_request_item_files (");
+            sql.append("request_item_id, document_master_request_item_code, document_type, slot_code, sort_order, ");
+            sql.append("file_uploaded, file_path, original_file_name, mime_type, file_size, file_uploaded_at, is_updated");
+            sql.append(") VALUES (");
+            sql.append(":REQUEST_ITEM_ID, :DOCUMENT_MASTER_REQUEST_ITEM_CODE, 'GENERAL', 'MAIN', :SORT_ORDER, ");
+            sql.append("1, :FILE_PATH, :ORIGINAL_FILE_NAME, :MIME_TYPE, :FILE_SIZE, NOW(), 1");
+            sql.append(") ON DUPLICATE KEY UPDATE ");
+            sql.append("sort_order = VALUES(sort_order), file_uploaded = 1, file_path = VALUES(file_path), ");
+            sql.append("original_file_name = VALUES(original_file_name), mime_type = VALUES(mime_type), ");
+            sql.append("file_size = VALUES(file_size), file_uploaded_at = NOW(), check_result = NULL, ");
+            sql.append("check_note = NULL, checked_at = NULL, checked_by = NULL, is_updated = 1");
 
-            int updatedRows = template.update(updateSql.toString(), updateParams);
-            if (updatedRows > 0) {
-                return updatedRows;
-            }
-
-            MapSqlParameterSource insertParams = new MapSqlParameterSource()
-                    .addValue("REQUEST_NO", requestNo)
-                    .addValue("DOCUMENT_NAME", documentName)
-                    .addValue("FILE_PATH", filePath);
-
-            StringBuilder insertSql = new StringBuilder();
-            insertSql.append("INSERT INTO m_document_request_items (");
-            insertSql.append("request_no, document_name, file_uploaded, file_path, file_uploaded_at, is_updated, created_at, updated_at");
-            insertSql.append(") VALUES (");
-            insertSql.append(":REQUEST_NO, :DOCUMENT_NAME, 1, :FILE_PATH, NOW(), 1, NOW(), NOW()");
-            insertSql.append(")");
-
-            return template.update(insertSql.toString(), insertParams);
+            return template.update(sql.toString(), namedParameters);
         } catch (Exception ex) {
             log.error("{}", ex.getMessage());
             throw new BusinessException(AppStatus.EXCEPTION_DATABASE, ex.getMessage());
@@ -307,7 +309,34 @@ public class DocumentRequestRepository extends CommonRepository {
     }
 
     public Map<String, Object> findLatestUploadedAttachmentByRequestNoAndSortOrder(String requestNo, Integer sortOrder) {
-        return null;
+        try {
+            MapSqlParameterSource namedParameters = new MapSqlParameterSource()
+                    .addValue("REQUEST_NO", requestNo)
+                    .addValue("SORT_ORDER", sortOrder);
+
+            StringBuilder sql = new StringBuilder();
+            sql.append("SELECT f.file_path, f.original_file_name, f.mime_type ");
+            sql.append("FROM m_document_request dr ");
+            sql.append("JOIN m_document_request_items ri ");
+            sql.append("  ON ri.request_id COLLATE utf8mb4_unicode_ci = dr.id COLLATE utf8mb4_unicode_ci ");
+            sql.append("JOIN m_document_setting_requires dsr ");
+            sql.append("  ON dsr.document_code COLLATE utf8mb4_unicode_ci = dr.document_code COLLATE utf8mb4_unicode_ci ");
+            sql.append("  AND dsr.document_master_request_item_code COLLATE utf8mb4_unicode_ci = ri.document_master_request_item_code COLLATE utf8mb4_unicode_ci ");
+            sql.append("  AND dsr.is_active = 'YES' ");
+            sql.append("JOIN m_document_request_item_files f ");
+            sql.append("  ON f.request_item_id COLLATE utf8mb4_unicode_ci = ri.id COLLATE utf8mb4_unicode_ci ");
+            sql.append("WHERE dr.request_no COLLATE utf8mb4_unicode_ci = :REQUEST_NO COLLATE utf8mb4_unicode_ci ");
+            sql.append("AND dsr.sort_order = :SORT_ORDER ");
+            sql.append("AND f.file_uploaded = 1 ");
+            sql.append("ORDER BY f.file_uploaded_at DESC ");
+            sql.append("LIMIT 1");
+
+            List<Map<String, Object>> rows = template.queryForList(sql.toString(), namedParameters);
+            return rows.isEmpty() ? null : rows.get(0);
+        } catch (Exception ex) {
+            log.error("{}", ex.getMessage());
+            throw new BusinessException(AppStatus.EXCEPTION_DATABASE, ex.getMessage());
+        }
     }
 
     public Map<String, Object> findDocumentRequestSummaryByUserDocumentAndStatus(
@@ -433,23 +462,23 @@ public class DocumentRequestRepository extends CommonRepository {
                         .addValue("NOTE", item.getCheckNote());
 
                 StringBuilder sql = new StringBuilder();
-                sql.append("INSERT INTO m_document_request_items (");
-                sql.append("request_no, document_master_request_item_code, approve_status, note, created_at, updated_at");
-                sql.append(") ");
-                sql.append("SELECT ");
-                sql.append(":REQUEST_NO, dsr.document_master_request_item_code, :APPROVE_STATUS, :NOTE, NOW(), NOW() ");
-                sql.append("FROM m_document_request dr ");
+                sql.append("UPDATE m_document_request_items ri ");
+                sql.append("JOIN m_document_request dr ");
+                sql.append("ON dr.id COLLATE utf8mb4_unicode_ci = ri.request_id COLLATE utf8mb4_unicode_ci ");
                 sql.append("JOIN m_document_setting_requires dsr ");
                 sql.append("ON dsr.document_code COLLATE utf8mb4_unicode_ci = dr.document_code COLLATE utf8mb4_unicode_ci ");
+                sql.append("AND dsr.document_master_request_item_code COLLATE utf8mb4_unicode_ci = ri.document_master_request_item_code COLLATE utf8mb4_unicode_ci ");
                 sql.append("AND dsr.is_active = 'YES' ");
+                sql.append("SET ri.approve_status = :APPROVE_STATUS, ");
+                sql.append("ri.note = :NOTE, ");
+                sql.append("ri.updated_at = NOW() ");
                 sql.append("WHERE dr.request_no COLLATE utf8mb4_unicode_ci = :REQUEST_NO COLLATE utf8mb4_unicode_ci ");
-                sql.append("AND dsr.sort_order = :SORT_ORDER ");
-                sql.append("ON DUPLICATE KEY UPDATE ");
-                sql.append("approve_status = VALUES(approve_status), ");
-                sql.append("note = VALUES(note), ");
-                sql.append("updated_at = NOW()");
+                sql.append("AND dsr.sort_order = :SORT_ORDER");
 
-                updatedRows += template.update(sql.toString(), namedParameters);
+                int affectedRows = template.update(sql.toString(), namedParameters);
+                if (affectedRows > 0 || inspectionItemExists(requestNo, item.getSortOrder())) {
+                    updatedRows++;
+                }
             }
 
             return updatedRows;
@@ -457,6 +486,26 @@ public class DocumentRequestRepository extends CommonRepository {
             log.error("{}", ex.getMessage());
             throw new BusinessException(AppStatus.EXCEPTION_DATABASE, ex.getMessage());
         }
+    }
+
+    private boolean inspectionItemExists(String requestNo, Integer sortOrder) {
+        MapSqlParameterSource namedParameters = new MapSqlParameterSource()
+                .addValue("REQUEST_NO", requestNo)
+                .addValue("SORT_ORDER", sortOrder);
+
+        String sql = "SELECT COUNT(*) "
+                + "FROM m_document_request_items ri "
+                + "JOIN m_document_request dr "
+                + "ON dr.id COLLATE utf8mb4_unicode_ci = ri.request_id COLLATE utf8mb4_unicode_ci "
+                + "JOIN m_document_setting_requires dsr "
+                + "ON dsr.document_code COLLATE utf8mb4_unicode_ci = dr.document_code COLLATE utf8mb4_unicode_ci "
+                + "AND dsr.document_master_request_item_code COLLATE utf8mb4_unicode_ci = ri.document_master_request_item_code COLLATE utf8mb4_unicode_ci "
+                + "AND dsr.is_active = 'YES' "
+                + "WHERE dr.request_no COLLATE utf8mb4_unicode_ci = :REQUEST_NO COLLATE utf8mb4_unicode_ci "
+                + "AND dsr.sort_order = :SORT_ORDER";
+
+        Integer count = template.queryForObject(sql, namedParameters, Integer.class);
+        return count != null && count > 0;
     }
 
     public String findDocumentStatusIdByThaiName(String statusNameTh) {
@@ -776,9 +825,19 @@ public class DocumentRequestRepository extends CommonRepository {
                 .addValue("MOBILE_USER_UUID", mobileUserUuid);
 
         StringBuilder sql = new StringBuilder();
-        sql.append("SELECT da.* ");
+        sql.append("SELECT da.*, ");
+        sql.append("p.name_in_thai AS province_name, ");
+        sql.append("d.name_in_thai AS district_name, ");
+        sql.append("s.name_in_thai AS sub_district_name ");
         sql.append("FROM m_delivery_address da ");
+        sql.append("LEFT JOIN provinces p ON BINARY CAST(p.code AS CHAR) = BINARY da.province ");
+        sql.append("LEFT JOIN districts d ON BINARY CAST(d.code AS CHAR) = BINARY da.district ");
+        sql.append("  AND d.province_id = p.id ");
+        sql.append("LEFT JOIN subdistricts s ON BINARY CAST(s.code AS CHAR) = BINARY da.sub_district ");
+        sql.append("  AND s.district_id = d.id ");
         sql.append("WHERE da.mobile_user_uuid COLLATE utf8mb4_unicode_ci = :MOBILE_USER_UUID COLLATE utf8mb4_unicode_ci ");
+        sql.append("AND da.is_active = 'YES' ");
+        sql.append("ORDER BY da.is_default DESC, da.updated_at DESC ");
         sql.append("LIMIT 1");
 
         List<Map<String, Object>> deliveryAddressList = template.queryForList(sql.toString(), namedParameters);
