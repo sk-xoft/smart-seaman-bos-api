@@ -527,6 +527,26 @@ public class DocumentRequestRepository extends CommonRepository {
         }
     }
 
+    public String findDocumentStatusIdByCode(String statusCode) {
+        try {
+            MapSqlParameterSource namedParameters = new MapSqlParameterSource()
+                    .addValue("STATUS_CODE", statusCode);
+
+            StringBuilder sql = new StringBuilder();
+            sql.append("SELECT ds.id ");
+            sql.append("FROM m_document_status ds ");
+            sql.append("WHERE ds.document_status_code = :STATUS_CODE ");
+            sql.append("AND ds.is_active = 'YES' ");
+            sql.append("LIMIT 1");
+
+            List<String> ids = template.queryForList(sql.toString(), namedParameters, String.class);
+            return ids.isEmpty() ? null : ids.get(0);
+        } catch (Exception ex) {
+            log.error("{}", ex.getMessage());
+            throw new BusinessException(AppStatus.EXCEPTION_DATABASE, ex.getMessage());
+        }
+    }
+
     public int updateDocumentRequestStatus(String requestNo, String statusId, boolean resetResubmit) {
         try {
             MapSqlParameterSource namedParameters = new MapSqlParameterSource()
@@ -539,6 +559,27 @@ public class DocumentRequestRepository extends CommonRepository {
             sql.append("SET dr.document_status_id = :STATUS_ID, ");
             sql.append("dr.is_resubmit = CASE WHEN :RESET_RESUBMIT = 1 THEN 0 ELSE dr.is_resubmit END, ");
             sql.append("dr.updated_at = NOW() ");
+            sql.append("WHERE dr.request_no COLLATE utf8mb4_unicode_ci = :REQUEST_NO COLLATE utf8mb4_unicode_ci");
+
+            return template.update(sql.toString(), namedParameters);
+        } catch (Exception ex) {
+            log.error("{}", ex.getMessage());
+            throw new BusinessException(AppStatus.EXCEPTION_DATABASE, ex.getMessage());
+        }
+    }
+
+    public int markDeliveryDeliveredByRequestNo(String requestNo) {
+        try {
+            MapSqlParameterSource namedParameters = new MapSqlParameterSource()
+                    .addValue("REQUEST_NO", requestNo);
+
+            StringBuilder sql = new StringBuilder();
+            sql.append("UPDATE m_delivery d ");
+            sql.append("JOIN m_document_request dr ");
+            sql.append("ON dr.id COLLATE utf8mb4_unicode_ci = d.request_id COLLATE utf8mb4_unicode_ci ");
+            sql.append("SET d.delivery_status = 'delivered', ");
+            sql.append("d.delivered_at = COALESCE(d.delivered_at, NOW()), ");
+            sql.append("d.updated_at = NOW() ");
             sql.append("WHERE dr.request_no COLLATE utf8mb4_unicode_ci = :REQUEST_NO COLLATE utf8mb4_unicode_ci");
 
             return template.update(sql.toString(), namedParameters);
@@ -888,6 +929,7 @@ public class DocumentRequestRepository extends CommonRepository {
             String requestNo
     ) {
         List<String> conditions = new ArrayList<>();
+        conditions.add("dr.is_active = 'YES'");
 
         if (status != null && !status.trim().isEmpty()) {
             conditions.add("(ds.name_th LIKE CONCAT('%', :STATUS, '%') OR ds.name_en LIKE CONCAT('%', :STATUS, '%') OR dr.document_status_id = :STATUS)");
@@ -907,10 +949,6 @@ public class DocumentRequestRepository extends CommonRepository {
         if (requestNo != null && !requestNo.trim().isEmpty()) {
             conditions.add("dr.request_no LIKE CONCAT('%', :REQUEST_NO, '%')");
             namedParameters.addValue("REQUEST_NO", requestNo.trim());
-        }
-
-        if (conditions.isEmpty()) {
-            return;
         }
 
         sql.append(" WHERE ");

@@ -17,6 +17,7 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RestController;
 
 import javax.servlet.http.HttpServletRequest;
+import java.util.Map;
 
 import static org.springframework.http.ResponseEntity.ok;
 
@@ -34,6 +35,13 @@ public class DocumentRenewalController extends BaseController {
     public ResponseEntity<SuccessResponse<DocumentRenewalDetailResponse>> detail(
             HttpServletRequest request, @PathVariable String requestNo) {
         return ok(success(request, detailService.detail(requestNo)));
+    }
+
+    @Operation(summary = "Get Thailand Post tracking events for a document renewal")
+    @GetMapping(Routes.DOCUMENT_RENEWAL_TRACKING)
+    public ResponseEntity<SuccessResponse<Map<String, Object>>> tracking(
+            HttpServletRequest request, @PathVariable String requestNo) {
+        return ok(success(request, detailService.tracking(requestNo)));
     }
 
     private <T> SuccessResponse<T> success(HttpServletRequest request, T data) {

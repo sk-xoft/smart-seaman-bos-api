@@ -15,6 +15,7 @@ import com.seaman.repository.DocumentRequestRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
@@ -24,6 +25,7 @@ import java.time.ZoneOffset;
 import java.time.format.DateTimeFormatter;
 import java.util.Date;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -35,6 +37,7 @@ public class DocumentRenewalDetailService {
     private final DocumentRenewalRepository repository;
     private final DocumentRequestRepository documentRequestRepository;
     private final ProfileService profileService;
+    private final ThailandPostTrackingService thailandPostTrackingService;
     private final AmazonS3 getS3;
 
     @Value("${object.store.bucket}")
@@ -119,6 +122,64 @@ public class DocumentRenewalDetailService {
         }
 
         return response;
+    }
+
+    @Transactional
+    public Map<String, Object> tracking(String requestNo) {
+        Map<String, Object> row = repository.findByRequestNo(requestNo);
+        if (row == null) {
+            throw new BusinessException(AppStatus.DATA_NOT_FOUND, "Request not found: " + requestNo);
+        }
+
+        String statusCode = str(row, "document_status_code");
+        if (!DELIVERY_STATUSES.contains(statusCode)) {
+            throw new BusinessException(AppStatus.EXCEPTION_GLOBAL, "Tracking is not available for this request status.");
+        }
+
+        Map<String, Object> delivery = repository.findDeliveryByRequestId(str(row, "id"));
+        String trackingNo = delivery == null ? null : str(delivery, "tracking_no");
+        if (trackingNo == null || trackingNo.trim().isEmpty()) {
+            throw new BusinessException(AppStatus.DATA_NOT_FOUND, "Tracking number not found.");
+        }
+
+        Map<String, Object> trackingResult = thailandPostTrackingService.track(trackingNo.trim());
+        if (!"DELIVERED".equals(statusCode) && hasSuccessfulDelivery(trackingResult)) {
+            String deliveredStatusId = documentRequestRepository.findDocumentStatusIdByCode("DELIVERED");
+            if (deliveredStatusId == null) {
+                throw new BusinessException(AppStatus.DATA_NOT_FOUND, "Document status DELIVERED not found.");
+            }
+
+            documentRequestRepository.updateDocumentRequestStatus(requestNo, deliveredStatusId, false);
+            documentRequestRepository.markDeliveryDeliveredByRequestNo(requestNo);
+        }
+
+        return trackingResult;
+    }
+
+    private boolean hasSuccessfulDelivery(Map<String, Object> trackingResult) {
+        Object rawEvents = trackingResult == null ? null : trackingResult.get("events");
+        if (!(rawEvents instanceof List)) {
+            return false;
+        }
+
+        for (Object rawEvent : (List<?>) rawEvents) {
+            if (!(rawEvent instanceof Map)) {
+                continue;
+            }
+
+            Map<?, ?> event = (Map<?, ?>) rawEvent;
+            String statusCode = String.valueOf(event.get("statusCode"));
+            String status = String.valueOf(event.get("status")).toLowerCase(Locale.ROOT);
+            if ("501".equals(statusCode)
+                    || status.contains("นำจ่ายสำเร็จ")
+                    || status.contains("นำส่งสำเร็จ")
+                    || status.contains("จัดส่งสำเร็จ")
+                    || status.contains("delivered")) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     private DocumentRenewalDetailItemResponse mapItem(
