@@ -3,6 +3,7 @@ package com.seaman.service;
 import com.amazonaws.HttpMethod;
 import com.amazonaws.services.s3.AmazonS3;
 import com.seaman.constant.AppStatus;
+import com.seaman.constant.AppSys;
 import com.seaman.exception.BusinessException;
 import com.seaman.model.response.DocumentRenewalDeliveryResponse;
 import com.seaman.model.response.DocumentRenewalDeptSubmissionResponse;
@@ -13,6 +14,8 @@ import com.seaman.model.response.DocumentRenewalSummaryStatusResponse;
 import com.seaman.repository.DocumentRenewalRepository;
 import com.seaman.repository.DocumentRequestRepository;
 import lombok.RequiredArgsConstructor;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -34,10 +37,13 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 public class DocumentRenewalDetailService {
 
+    private static final Logger log = LoggerFactory.getLogger(DocumentRenewalDetailService.class);
+
     private final DocumentRenewalRepository repository;
     private final DocumentRequestRepository documentRequestRepository;
     private final ProfileService profileService;
     private final ThailandPostTrackingService thailandPostTrackingService;
+    private final SendNotificationService sendNotificationService;
     private final AmazonS3 getS3;
 
     @Value("${object.store.bucket}")
@@ -103,6 +109,7 @@ public class DocumentRenewalDetailService {
         response.setDocumentName(str(row, "document_name_th"));
         response.setStatus(status);
         response.setSubmittedAt(formatDatetime(row.get("submitted_at")));
+        response.setResubmittedAt(formatDatetime(row.get("resubmitted_at")));
         response.setAmount((BigDecimal) row.get("amount"));
         response.setIsResubmit(toBoolean(row.get("is_resubmit")));
         response.setProfile(profileService.getProfile(response.getMobileUserUuid()));
@@ -143,17 +150,61 @@ public class DocumentRenewalDetailService {
         }
 
         Map<String, Object> trackingResult = thailandPostTrackingService.track(trackingNo.trim());
-        if (!"DELIVERED".equals(statusCode) && hasSuccessfulDelivery(trackingResult)) {
-            String deliveredStatusId = documentRequestRepository.findDocumentStatusIdByCode("DELIVERED");
-            if (deliveredStatusId == null) {
-                throw new BusinessException(AppStatus.DATA_NOT_FOUND, "Document status DELIVERED not found.");
-            }
-
-            documentRequestRepository.updateDocumentRequestStatus(requestNo, deliveredStatusId, false);
-            documentRequestRepository.markDeliveryDeliveredByRequestNo(requestNo);
+        if (!"DELIVERED".equals(statusCode)) {
+            markDeliveredIfSuccessful(requestNo, trackingResult);
         }
 
         return trackingResult;
+    }
+
+    @Transactional
+    public boolean markDeliveredIfSuccessful(String requestNo, Map<String, Object> trackingResult) {
+        if (!hasSuccessfulDelivery(trackingResult)) {
+            return false;
+        }
+
+        String deliveredStatusId = documentRequestRepository.findDocumentStatusIdByCode("DELIVERED");
+        if (deliveredStatusId == null) {
+            throw new BusinessException(AppStatus.DATA_NOT_FOUND, "Document status DELIVERED not found.");
+        }
+
+        int updatedRows = documentRequestRepository.markDocumentRequestDeliveredIfDelivering(
+                requestNo,
+                deliveredStatusId
+        );
+        if (updatedRows == 0) {
+            log.info("Document renewal request {} delivery notification skipped because status is no longer DELIVERING",
+                    requestNo);
+            return false;
+        }
+
+        documentRequestRepository.markDeliveryDeliveredByRequestNo(requestNo);
+        log.info("Document renewal request {} marked DELIVERED from Thailand Post tracking", requestNo);
+
+        Map<String, Object> request = repository.findByRequestNo(requestNo);
+        String mobileUserUuid = request == null ? null : str(request, "mobile_user_uuid");
+        if (mobileUserUuid == null || mobileUserUuid.trim().isEmpty()) {
+            log.warn("Document renewal delivery notification skipped for request {} because mobile user UUID was not found",
+                    requestNo);
+            return true;
+        }
+
+        String trackingNo = str(trackingResult, "trackingNo");
+        String bodyMessage = "เอกสารของคุณจัดส่งสำเร็จแล้ว";
+        if (trackingNo != null && !trackingNo.trim().isEmpty()) {
+            bodyMessage += "\nเลขพัสดุ: " + trackingNo;
+        }
+
+        sendNotificationService.sendNotification(
+                mobileUserUuid,
+                AppSys.NOTI_TYPE_DOCUMENT_RENEWAL_DELIVERED,
+            bodyMessage,
+                requestNo,
+            "Smart Seaman",
+            trackingNo
+        );
+        log.info("Published document renewal delivery notification for request {}", requestNo);
+        return true;
     }
 
     private boolean hasSuccessfulDelivery(Map<String, Object> trackingResult) {

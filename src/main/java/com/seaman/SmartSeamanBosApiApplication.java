@@ -7,23 +7,42 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.cache.annotation.EnableCaching;
 import org.springframework.context.annotation.Bean;
 import org.springframework.core.env.Environment;
+import org.springframework.scheduling.annotation.EnableScheduling;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import io.swagger.v3.oas.annotations.OpenAPIDefinition;
 import io.swagger.v3.oas.annotations.info.Info;
 import java.nio.charset.Charset;
+import java.util.Arrays;
 import java.util.Date;
 import java.util.TimeZone;
 
 @SpringBootApplication
 @OpenAPIDefinition(info = @Info(title = AppSys.APPLICATION_NAME, version = AppSys.APPLICATION_VERSION, description = AppSys.APPLICATION_DESC))
 @EnableCaching
+@EnableScheduling
 public class SmartSeamanBosApiApplication {
 
 	private final Logger logger = LoggerFactory.getLogger(SmartSeamanBosApiApplication.class);
 
 	public static void main(String[] args) {
+		TimeZone.setDefault(TimeZone.getTimeZone("Asia/Bangkok"));
+		configureDotenvForActiveProfile(args);
 		SpringApplication.run(SmartSeamanBosApiApplication.class, args);
+	}
+
+	private static void configureDotenvForActiveProfile(String[] args) {
+		System.setProperty(".env.prefix", "");
+		String activeProfiles = System.getProperty("spring.profiles.active", "");
+		boolean devProfileActive = Arrays.stream(activeProfiles.split(","))
+				.map(String::trim)
+				.anyMatch("dev"::equals);
+		boolean devProfileRequested = Arrays.stream(args)
+				.anyMatch("--spring.profiles.active=dev"::equals);
+
+		if (devProfileActive || devProfileRequested) {
+			System.setProperty(".env.filename", ".env.dev");
+		}
 	}
 
 	@Bean

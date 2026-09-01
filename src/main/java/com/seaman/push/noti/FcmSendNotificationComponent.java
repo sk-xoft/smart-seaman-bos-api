@@ -72,6 +72,9 @@ public class FcmSendNotificationComponent {
         items.put("countNoti", data.getCountNoti());
         items.put("notiType", data.getNotiType());
         items.put("valueId", data.getValueId());
+        if (data.getTrackingNo() != null && !data.getTrackingNo().trim().isEmpty()) {
+            items.put("trackingNo", data.getTrackingNo());
+        }
         return items;
     }
 }

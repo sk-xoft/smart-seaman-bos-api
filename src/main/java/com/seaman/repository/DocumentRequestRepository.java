@@ -568,6 +568,27 @@ public class DocumentRequestRepository extends CommonRepository {
         }
     }
 
+    public int markDocumentRequestDeliveredIfDelivering(String requestNo, String deliveredStatusId) {
+        try {
+            MapSqlParameterSource namedParameters = new MapSqlParameterSource()
+                    .addValue("REQUEST_NO", requestNo)
+                    .addValue("DELIVERED_STATUS_ID", deliveredStatusId);
+
+            StringBuilder sql = new StringBuilder();
+            sql.append("UPDATE m_document_request dr ");
+            sql.append("JOIN m_document_status current_status ");
+            sql.append("ON current_status.id COLLATE utf8mb4_unicode_ci = dr.document_status_id COLLATE utf8mb4_unicode_ci ");
+            sql.append("SET dr.document_status_id = :DELIVERED_STATUS_ID, dr.updated_at = NOW() ");
+            sql.append("WHERE dr.request_no COLLATE utf8mb4_unicode_ci = :REQUEST_NO COLLATE utf8mb4_unicode_ci ");
+            sql.append("AND current_status.document_status_code = 'DELIVERING'");
+
+            return template.update(sql.toString(), namedParameters);
+        } catch (Exception ex) {
+            log.error("{}", ex.getMessage());
+            throw new BusinessException(AppStatus.EXCEPTION_DATABASE, ex.getMessage());
+        }
+    }
+
     public int markDeliveryDeliveredByRequestNo(String requestNo) {
         try {
             MapSqlParameterSource namedParameters = new MapSqlParameterSource()
@@ -583,6 +604,27 @@ public class DocumentRequestRepository extends CommonRepository {
             sql.append("WHERE dr.request_no COLLATE utf8mb4_unicode_ci = :REQUEST_NO COLLATE utf8mb4_unicode_ci");
 
             return template.update(sql.toString(), namedParameters);
+        } catch (Exception ex) {
+            log.error("{}", ex.getMessage());
+            throw new BusinessException(AppStatus.EXCEPTION_DATABASE, ex.getMessage());
+        }
+    }
+
+    public List<Map<String, Object>> findDeliveringRequestsWithTrackingNo() {
+        try {
+            StringBuilder sql = new StringBuilder();
+            sql.append("SELECT dr.request_no, d.tracking_no ");
+            sql.append("FROM m_document_request dr ");
+            sql.append("JOIN m_document_status ds ");
+            sql.append("ON ds.id COLLATE utf8mb4_unicode_ci = dr.document_status_id COLLATE utf8mb4_unicode_ci ");
+            sql.append("JOIN m_delivery d ");
+            sql.append("ON d.request_id COLLATE utf8mb4_unicode_ci = dr.id COLLATE utf8mb4_unicode_ci ");
+            sql.append("WHERE dr.is_active = 'YES' ");
+            sql.append("AND ds.document_status_code = 'DELIVERING' ");
+            sql.append("AND d.tracking_no IS NOT NULL ");
+            sql.append("AND TRIM(d.tracking_no) <> ''");
+
+            return template.queryForList(sql.toString(), new MapSqlParameterSource());
         } catch (Exception ex) {
             log.error("{}", ex.getMessage());
             throw new BusinessException(AppStatus.EXCEPTION_DATABASE, ex.getMessage());

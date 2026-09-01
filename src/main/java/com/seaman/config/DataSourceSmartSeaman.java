@@ -1,5 +1,6 @@
 package com.seaman.config;
 
+import com.zaxxer.hikari.HikariDataSource;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.jdbc.DataSourceBuilder;
 import org.springframework.context.annotation.Bean;
@@ -23,17 +24,25 @@ public class DataSourceSmartSeaman {
     @Value("${smart.seaman.datasource.password}")
     private String dbPwd;
 
+    @Value("${application.database-time-zone-offset:+07:00}")
+    private String databaseTimeZoneOffset;
+
     @Primary
     @Bean(name = "dataSource")
     public DataSource dataSource() {
 
-        DataSource dataSource =  DataSourceBuilder
+        HikariDataSource dataSource = DataSourceBuilder
                 .create()
                 .username(dbUsr)
                 .password(dbPwd)
                 .url(url)
                 .driverClassName(driver)
+                .type(HikariDataSource.class)
                 .build();
+
+        // The managed MySQL server uses UTC. Run NOW()/CURRENT_TIMESTAMP in Bangkok time
+        // for every connection opened by this application.
+        dataSource.setConnectionInitSql("SET time_zone = '" + databaseTimeZoneOffset + "'");
 
         return dataSource;
     }

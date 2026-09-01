@@ -281,6 +281,11 @@ public class SendNotificationService {
     }
 
     public void sendNotification(String userUuid, String notiType, String bodyMessage, String valueId, String titleMessage) {
+        sendNotification(userUuid, notiType, bodyMessage, valueId, titleMessage, null);
+    }
+
+    public void sendNotification(String userUuid, String notiType, String bodyMessage, String valueId,
+                                 String titleMessage, String trackingNo) {
 
         try {
 
@@ -309,6 +314,7 @@ public class SendNotificationService {
                 fcmMessageData.setValueId(valueId);
                 fcmMessageData.setNotiId(String.valueOf(notiId));
                 fcmMessageData.setCountNoti(String.valueOf(countNoti));
+                fcmMessageData.setTrackingNo(trackingNo);
 
                 NotificationModel notificationModel = new NotificationModel();
                 notificationModel.setTitle(titleMessage);

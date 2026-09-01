@@ -13,4 +13,5 @@ public class FcmMessageData {
     private String notiType;
     private String valueId;
     private String notiId;
+    private String trackingNo;
 }

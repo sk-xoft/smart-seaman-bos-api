@@ -4,6 +4,7 @@ import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.model.ObjectMetadata;
 import com.amazonaws.services.s3.model.S3Object;
 import com.seaman.constant.AppStatus;
+import com.seaman.constant.AppSys;
 import com.seaman.entity.UsersEntity;
 import com.seaman.exception.BusinessException;
 import com.seaman.exception.CommonException;
@@ -43,6 +44,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.UUID;
 
@@ -53,12 +55,14 @@ public class DocumentRequestService {
     private final Logger log = LoggerFactory.getLogger(this.getClass());
     private static final String SYSTEM_ACTION_UUID = "00000000-0000-0000-0000-000000000000";
     private static final long MAX_ATTACHMENT_FILE_SIZE = 10L * 1024 * 1024;
+    private static final int MAX_NOTIFICATION_BODY_LENGTH = 1500;
     private static final Set<String> ALLOWED_ATTACHMENT_MIME_TYPES =
             Set.of("image/jpeg", "image/png", "application/pdf");
     private final DocumentRequestRepository documentRequestRepository;
-        private final UserRepository userRepository;
+    private final UserRepository userRepository;
     private final HttpServletRequest httpServletRequest;
     private final AmazonS3 getS3;
+    private final SendNotificationService sendNotificationService;
 
     @Value("${object.store.bucket}")
     private String bucketName;
@@ -267,6 +271,9 @@ public class DocumentRequestService {
             }
 
             List<DocumentInspectionItemRequest> normalizedInspections = normalizeInspections(inspections);
+            List<DocumentAttachment> previousInspections =
+                    documentRequestRepository.findDetailItemsByRequestNo(requestNo);
+            boolean inspectionChanged = hasInspectionChanged(previousInspections, normalizedInspections);
             String checkedBy = resolveCheckedBy();
 
             int updatedRows = documentRequestRepository.updateInspectionResults(requestNo, normalizedInspections);
@@ -274,6 +281,27 @@ public class DocumentRequestService {
                 throw new BusinessException(AppStatus.EXCEPTION_DATABASE, "Can not save all inspection results.");
             }
             boolean allRequiredPassed = documentRequestRepository.areAllRequiredDocumentItemsPassed(requestNo);
+
+            if (inspectionChanged) {
+                String mobileUserUuid = stringValue(requestSummary.get("mobile_user_uuid"));
+                String notificationBody = buildInspectionNotificationBody(
+                        requestNo,
+                        previousInspections,
+                        normalizedInspections
+                );
+                if (notificationBody != null) {
+                    registerNotificationAfterCommit(
+                            mobileUserUuid,
+                            AppSys.NOTI_TYPE_DOCUMENT_INSPECTION_RESULT,
+                            notificationBody,
+                            requestNo,
+                            null
+                    );
+                }
+            } else {
+                log.info("Document inspection notification skipped for request {} because results are unchanged",
+                        requestNo);
+            }
 
             Map<String, Object> response = new HashMap<>();
             response.put("requestNo", requestNo);
@@ -315,12 +343,20 @@ public class DocumentRequestService {
             }
 
             String fromStatus = requestSummary.get("document_status_id") == null ? null : String.valueOf(requestSummary.get("document_status_id"));
+            String requestId = stringValue(requestSummary.get("request_id"));
+            Map<String, Object> previousDepartmentResult = requestId == null
+                    ? null
+                    : documentRequestRepository.findLatestDepartmentResultInfo(requestId);
+            String previousPickupDate = previousDepartmentResult == null
+                    ? null
+                    : stringValue(previousDepartmentResult.get("note"));
+            boolean departmentResultChanged = !Objects.equals(fromStatus, targetStatusId)
+                    || !Objects.equals(previousPickupDate, availablePickupDate);
             int updatedRows = documentRequestRepository.updateDocumentRequestStatus(requestNo, targetStatusId, false);
             if (updatedRows <= 0) {
                 throw new BusinessException(AppStatus.EXCEPTION_DATABASE, "Can not update document request status.");
             }
 
-            String requestId = requestSummary.get("request_id") == null ? null : String.valueOf(requestSummary.get("request_id"));
             String actionedBy = resolveActionedBy();
             if (requestId != null && !requestId.trim().isEmpty()) {
                 documentRequestRepository.insertDocumentTransaction(
@@ -331,6 +367,19 @@ public class DocumentRequestService {
                         availablePickupDate,
                         actionedBy
                 );
+            }
+
+            if (departmentResultChanged) {
+                registerNotificationAfterCommit(
+                        stringValue(requestSummary.get("mobile_user_uuid")),
+                        AppSys.NOTI_TYPE_DOCUMENT_PENDING_DEPARTMENT_PICKUP,
+                        "รอรับเอกสารจากกรมเจ้าท่า",
+                        requestNo,
+                        null
+                );
+            } else {
+                log.info("Department result notification skipped for request {} because status and pickup date are unchanged",
+                        requestNo);
             }
 
             Map<String, Object> response = new HashMap<>();
@@ -414,6 +463,30 @@ public class DocumentRequestService {
                 );
             }
 
+            boolean statusChanged = !Objects.equals(fromStatus, statusId);
+            String mobileUserUuid = stringValue(requestSummary.get("mobile_user_uuid"));
+            if (statusChanged && "sendback".equals(actionFilter)) {
+                String body = buildCorrectionRequiredNotificationBody(
+                        requestNoFilter,
+                        documentRequestRepository.findDetailItemsByRequestNo(requestNoFilter)
+                );
+                registerNotificationAfterCommit(
+                        mobileUserUuid,
+                        AppSys.NOTI_TYPE_DOCUMENT_REQUEST_CORRECTION_REQUIRED,
+                        body,
+                        requestNoFilter,
+                        null
+                );
+            } else if (statusChanged && "cancel".equals(actionFilter)) {
+                registerNotificationAfterCommit(
+                        mobileUserUuid,
+                        AppSys.NOTI_TYPE_DOCUMENT_REQUEST_CANCELLED,
+                        "คำขอต่ออายุเอกสาร " + requestNoFilter + " ถูกยกเลิกแล้ว",
+                        requestNoFilter,
+                        null
+                );
+            }
+
             Map<String, Object> response = new HashMap<>();
             response.put("requestNo", requestNoFilter);
             response.put("action", actionFilter);
@@ -453,6 +526,11 @@ public class DocumentRequestService {
                     ? null
                     : String.valueOf(requestSummary.get("document_status_name_th"));
             int updatedRows = 0;
+            String requestId = stringValue(requestSummary.get("request_id"));
+            String notificationType = null;
+            String notificationBody = null;
+            String notificationTrackingNo = null;
+            boolean notificationChanged = false;
 
             String note;
             String transactionAction;
@@ -482,6 +560,16 @@ public class DocumentRequestService {
                         throw new BusinessException(AppStatus.EXCEPTION_GLOBAL, "Please provide {shippedDate}.");
                     }
 
+                    Map<String, Object> previousDelivery = requestId == null
+                            ? null
+                            : documentRequestRepository.findLatestDeliveryInfo(requestId);
+                    String previousTrackingNo = previousDelivery == null
+                            ? null
+                            : stringValue(previousDelivery.get("tracking_no"));
+                    String previousShippedDate = previousDelivery == null
+                            ? null
+                            : normalizeDateValue(previousDelivery.get("shipped_date"));
+
                     int deliveryRows = documentRequestRepository.upsertDeliveryInfoByRequestNo(
                             requestNo,
                             trackingNo,
@@ -507,6 +595,12 @@ public class DocumentRequestService {
 
                     toStatus = deliveringStatusId;
                     statusNameTh = "กำลังจัดส่ง";
+                    notificationChanged = !Objects.equals(fromStatus, deliveringStatusId)
+                            || !Objects.equals(normalizeTrackingNo(previousTrackingNo), normalizeTrackingNo(trackingNo))
+                            || !Objects.equals(previousShippedDate, shippedDate);
+                    notificationType = AppSys.NOTI_TYPE_DOCUMENT_DELIVERY_STARTED;
+                    notificationBody = "เอกสารของคุณอยู่ระหว่างจัดส่ง\nเลขพัสดุ: " + trackingNo;
+                    notificationTrackingNo = trackingNo;
                     break;
                 default:
                     throw new BusinessException(AppStatus.EXCEPTION_GLOBAL, "Unsupported {action}. Supported: update_pickup_date, receive_doc, save_delivery_info.");
@@ -516,7 +610,6 @@ public class DocumentRequestService {
                 throw new BusinessException(AppStatus.EXCEPTION_GLOBAL, "Can not resolve target status.");
             }
 
-            String requestId = requestSummary.get("request_id") == null ? null : String.valueOf(requestSummary.get("request_id"));
             String actionedBy = resolveActionedBy();
             if (requestId != null && !requestId.trim().isEmpty()) {
                 documentRequestRepository.insertDocumentTransaction(
@@ -527,6 +620,21 @@ public class DocumentRequestService {
                         note,
                         actionedBy
                 );
+            }
+
+            if (notificationType != null) {
+                if (notificationChanged) {
+                    registerNotificationAfterCommit(
+                            stringValue(requestSummary.get("mobile_user_uuid")),
+                            notificationType,
+                            notificationBody,
+                            requestNo,
+                            notificationTrackingNo
+                    );
+                } else {
+                    log.info("Delivery notification skipped for request {} because status and delivery information are unchanged",
+                            requestNo);
+                }
             }
 
             Map<String, Object> response = new HashMap<>();
@@ -710,6 +818,202 @@ public class DocumentRequestService {
         }
 
         return normalizedItems;
+    }
+
+    private boolean hasInspectionChanged(List<DocumentAttachment> previousItems,
+                                         List<DocumentInspectionItemRequest> inspections) {
+        Map<Integer, DocumentAttachment> previousBySortOrder = new HashMap<>();
+        if (previousItems != null) {
+            for (DocumentAttachment item : previousItems) {
+                previousBySortOrder.put(item.getSortOrder(), item);
+            }
+        }
+
+        for (DocumentInspectionItemRequest inspection : inspections) {
+            DocumentAttachment previous = previousBySortOrder.get(inspection.getSortOrder());
+            String previousResult = previous == null ? "" : normalizedInspectionValue(previous.getCheckResult());
+            String previousNote = previous == null ? "" : normalizedInspectionNote(
+                    previous.getCheckResult(),
+                    previous.getCheckNote()
+            );
+            String currentResult = normalizedInspectionValue(inspection.getCheckResult());
+            String currentNote = normalizedInspectionNote(inspection.getCheckResult(), inspection.getCheckNote());
+            if (!Objects.equals(previousResult, currentResult) || !Objects.equals(previousNote, currentNote)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private String buildInspectionNotificationBody(String requestNo,
+                                                   List<DocumentAttachment> previousItems,
+                                                   List<DocumentInspectionItemRequest> inspections) {
+        Map<Integer, DocumentInspectionItemRequest> inspectionBySortOrder = new HashMap<>();
+        for (DocumentInspectionItemRequest inspection : inspections) {
+            inspectionBySortOrder.put(inspection.getSortOrder(), inspection);
+        }
+
+        List<String> resultLines = new ArrayList<>();
+        Set<Integer> includedSortOrders = new java.util.HashSet<>();
+        if (previousItems != null) {
+            for (DocumentAttachment item : previousItems) {
+                DocumentInspectionItemRequest inspection = inspectionBySortOrder.get(item.getSortOrder());
+                String result = inspection == null
+                        ? normalizedInspectionValue(item.getCheckResult())
+                        : normalizedInspectionValue(inspection.getCheckResult());
+                String note = inspection == null
+                        ? normalizedInspectionNote(item.getCheckResult(), item.getCheckNote())
+                        : normalizedInspectionNote(inspection.getCheckResult(), inspection.getCheckNote());
+                addInspectionResultLine(resultLines, item.getDocumentName(), item.getSortOrder(), result, note);
+                includedSortOrders.add(item.getSortOrder());
+            }
+        }
+
+        for (DocumentInspectionItemRequest inspection : inspections) {
+            if (includedSortOrders.contains(inspection.getSortOrder())) {
+                continue;
+            }
+            String result = normalizedInspectionValue(inspection.getCheckResult());
+            String note = normalizedInspectionNote(inspection.getCheckResult(), inspection.getCheckNote());
+            addInspectionResultLine(resultLines, null, inspection.getSortOrder(), result, note);
+        }
+
+        if (resultLines.isEmpty()) {
+            return null;
+        }
+
+        StringBuilder body = new StringBuilder("ผลการตรวจเอกสารคำขอ ").append(requestNo);
+        for (String line : resultLines) {
+            if (body.length() + line.length() > MAX_NOTIFICATION_BODY_LENGTH) {
+                String truncationMessage = "\nเปิดแอปเพื่อดูรายละเอียดทั้งหมด";
+                int bodyLimit = MAX_NOTIFICATION_BODY_LENGTH - truncationMessage.length();
+                if (body.length() > bodyLimit) {
+                    body.setLength(bodyLimit);
+                }
+                body.append(truncationMessage);
+                break;
+            }
+            body.append(line);
+        }
+        return body.toString();
+    }
+
+    private void addInspectionResultLine(List<String> resultLines,
+                                         String documentName,
+                                         Integer sortOrder,
+                                         String result,
+                                         String note) {
+        if (result.isEmpty()) {
+            return;
+        }
+        String resolvedName = documentName == null || documentName.trim().isEmpty()
+                ? "เอกสาร " + sortOrder
+                : documentName.trim();
+        resultLines.add("\n" + resolvedName + ": " + ("pass".equals(result)
+                ? "ผ่าน"
+                : "ไม่ผ่าน - " + note));
+    }
+
+    private String normalizedInspectionValue(String value) {
+        return value == null ? "" : value.trim().toLowerCase(Locale.ROOT);
+    }
+
+    private String normalizedInspectionNote(String result, String note) {
+        if (!"fix".equals(normalizedInspectionValue(result))) {
+            return "";
+        }
+        return note == null ? "" : note.trim();
+    }
+
+    private String buildCorrectionRequiredNotificationBody(String requestNo,
+                                                           List<DocumentAttachment> items) {
+        List<String> correctionLines = new ArrayList<>();
+        if (items != null) {
+            for (DocumentAttachment item : items) {
+                String result = normalizedInspectionValue(item.getCheckResult());
+                if (!"fix".equals(result)) {
+                    continue;
+                }
+                String name = item.getDocumentName() == null || item.getDocumentName().trim().isEmpty()
+                        ? "เอกสาร " + item.getSortOrder()
+                        : item.getDocumentName().trim();
+                String note = normalizedInspectionNote(result, item.getCheckNote());
+                correctionLines.add("\n" + name + (note.isEmpty() ? "" : ": " + note));
+            }
+        }
+
+        StringBuilder body = new StringBuilder("กรุณาแก้ไขเอกสารคำขอ ").append(requestNo);
+        appendNotificationLines(body, correctionLines);
+        return body.toString();
+    }
+
+    private void appendNotificationLines(StringBuilder body, List<String> lines) {
+        for (String line : lines) {
+            if (body.length() + line.length() > MAX_NOTIFICATION_BODY_LENGTH) {
+                String truncationMessage = "\nเปิดแอปเพื่อดูรายละเอียดทั้งหมด";
+                int bodyLimit = MAX_NOTIFICATION_BODY_LENGTH - truncationMessage.length();
+                if (body.length() > bodyLimit) {
+                    body.setLength(bodyLimit);
+                }
+                body.append(truncationMessage);
+                return;
+            }
+            body.append(line);
+        }
+    }
+
+    private String normalizeDateValue(Object value) {
+        if (value == null) {
+            return null;
+        }
+        String normalized = String.valueOf(value).trim();
+        return normalized.length() >= 10 ? normalized.substring(0, 10) : normalized;
+    }
+
+    private String normalizeTrackingNo(String trackingNo) {
+        return trackingNo == null ? null : trackingNo.trim().toUpperCase(Locale.ROOT);
+    }
+
+    private String stringValue(Object value) {
+        if (value == null || String.valueOf(value).trim().isEmpty()) {
+            return null;
+        }
+        return String.valueOf(value).trim();
+    }
+
+    private void registerNotificationAfterCommit(String mobileUserUuid,
+                                                 String notificationType,
+                                                 String body,
+                                                 String requestNo,
+                                                 String trackingNo) {
+        if (mobileUserUuid == null || mobileUserUuid.trim().isEmpty()) {
+            log.warn("Document notification skipped for request {} because mobile user UUID was not found", requestNo);
+            return;
+        }
+
+        Runnable publisher = () -> {
+            sendNotificationService.sendNotification(
+                    mobileUserUuid,
+                    notificationType,
+                    body,
+                    requestNo,
+                    "Smart Seaman",
+                    trackingNo
+            );
+            log.info("Published {} notification for document request {}", notificationType, requestNo);
+        };
+
+        if (!TransactionSynchronizationManager.isSynchronizationActive()
+                || !TransactionSynchronizationManager.isActualTransactionActive()) {
+            log.warn("Document notification skipped for request {} because no active transaction was found", requestNo);
+            return;
+        }
+        TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
+            @Override
+            public void afterCommit() {
+                publisher.run();
+            }
+        });
     }
 
     private String resolveCheckedBy() {
@@ -984,13 +1288,6 @@ public class DocumentRequestService {
         }
         String ext = filename.substring(filename.lastIndexOf('.') + 1).trim().toLowerCase(Locale.ROOT);
         return ext.replaceAll("[^a-z0-9]", "");
-    }
-
-    private boolean isAllowedAttachmentExtension(String extension) {
-        return "pdf".equals(extension)
-                || "png".equals(extension)
-                || "jpg".equals(extension)
-                || "jpeg".equals(extension);
     }
 
     private String buildAttachmentObjectKey(String requestItemId) {
