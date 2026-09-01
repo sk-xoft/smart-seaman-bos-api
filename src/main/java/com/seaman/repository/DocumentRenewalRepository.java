@@ -52,19 +52,20 @@ public class DocumentRenewalRepository extends CommonRepository {
                     .addValue("REQUEST_ID", requestId)
                     .addValue("DOCUMENT_CODE", documentCode);
 
-            String sql = "SELECT ri.id, ri.document_master_request_item_code, " +
+                String sql = "SELECT ri.id, dsr.document_master_request_item_code, " +
                     "ri.approve_status, ri.note AS check_note, " +
-                    "mri.document_master_items_name, mri.storage_scope, " +
+                        "COALESCE(mri.document_master_items_name, CONCAT('เอกสาร ', dsr.sort_order)) AS document_master_items_name, " +
+                        "mri.storage_scope, " +
                     "dsr.sort_order " +
-                    "FROM m_document_request_items ri " +
-                    "LEFT JOIN m_document_master_request_item mri " +
-                    "  ON mri.document_master_items_code COLLATE utf8mb4_unicode_ci = ri.document_master_request_item_code COLLATE utf8mb4_unicode_ci " +
+                    "FROM m_document_setting_requires dsr " +
+                        "LEFT JOIN m_document_master_request_item mri " +
+                    "  ON mri.document_master_items_code COLLATE utf8mb4_unicode_ci = dsr.document_master_request_item_code COLLATE utf8mb4_unicode_ci " +
                     "  AND mri.is_active = 'YES' " +
-                    "LEFT JOIN m_document_setting_requires dsr " +
-                    "  ON dsr.document_code COLLATE utf8mb4_unicode_ci = :DOCUMENT_CODE COLLATE utf8mb4_unicode_ci " +
-                    "  AND dsr.document_master_request_item_code COLLATE utf8mb4_unicode_ci = ri.document_master_request_item_code COLLATE utf8mb4_unicode_ci " +
+                    "LEFT JOIN m_document_request_items ri " +
+                    "  ON ri.request_id COLLATE utf8mb4_unicode_ci = :REQUEST_ID COLLATE utf8mb4_unicode_ci " +
+                    "  AND ri.document_master_request_item_code COLLATE utf8mb4_unicode_ci = dsr.document_master_request_item_code COLLATE utf8mb4_unicode_ci " +
+                    "WHERE dsr.document_code COLLATE utf8mb4_unicode_ci = :DOCUMENT_CODE COLLATE utf8mb4_unicode_ci " +
                     "  AND dsr.is_active = 'YES' " +
-                    "WHERE ri.request_id COLLATE utf8mb4_unicode_ci = :REQUEST_ID COLLATE utf8mb4_unicode_ci " +
                     "ORDER BY dsr.sort_order ASC";
 
             return template.queryForList(sql, params);

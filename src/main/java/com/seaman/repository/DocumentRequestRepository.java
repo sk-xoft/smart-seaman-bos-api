@@ -451,6 +451,26 @@ public class DocumentRequestRepository extends CommonRepository {
             if (inspections == null || inspections.isEmpty()) {
                 return 0;
             }
+
+            List<Integer> sortOrders = inspections.stream()
+                .map(DocumentInspectionItemRequest::getSortOrder)
+                .distinct()
+                .collect(java.util.stream.Collectors.toList());
+            MapSqlParameterSource targetParameters = new MapSqlParameterSource()
+                .addValue("REQUEST_NO", requestNo)
+                .addValue("SORT_ORDERS", sortOrders);
+            String targetSql = "SELECT COUNT(DISTINCT dsr.sort_order) " +
+                "FROM m_document_request dr " +
+                "JOIN m_document_setting_requires dsr " +
+                "ON dsr.document_code COLLATE utf8mb4_unicode_ci = dr.document_code COLLATE utf8mb4_unicode_ci " +
+                "AND dsr.is_active = 'YES' " +
+                "WHERE dr.request_no COLLATE utf8mb4_unicode_ci = :REQUEST_NO COLLATE utf8mb4_unicode_ci " +
+                "AND dsr.sort_order IN (:SORT_ORDERS)";
+            Integer targetCount = template.queryForObject(targetSql, targetParameters, Integer.class);
+            if (targetCount == null || targetCount != inspections.size()) {
+            return targetCount == null ? 0 : targetCount;
+            }
+
             int updatedRows = 0;
 
             for (DocumentInspectionItemRequest item : inspections) {
@@ -462,23 +482,21 @@ public class DocumentRequestRepository extends CommonRepository {
                         .addValue("NOTE", item.getCheckNote());
 
                 StringBuilder sql = new StringBuilder();
-                sql.append("UPDATE m_document_request_items ri ");
-                sql.append("JOIN m_document_request dr ");
-                sql.append("ON dr.id COLLATE utf8mb4_unicode_ci = ri.request_id COLLATE utf8mb4_unicode_ci ");
+                sql.append("INSERT INTO m_document_request_items ");
+                sql.append("(request_id, request_no, document_master_request_item_code, approve_status, note, created_at, updated_at) ");
+                sql.append("SELECT dr.id, dr.request_no, dsr.document_master_request_item_code, ");
+                sql.append(":APPROVE_STATUS, :NOTE, NOW(), NOW() ");
+                sql.append("FROM m_document_request dr ");
                 sql.append("JOIN m_document_setting_requires dsr ");
                 sql.append("ON dsr.document_code COLLATE utf8mb4_unicode_ci = dr.document_code COLLATE utf8mb4_unicode_ci ");
-                sql.append("AND dsr.document_master_request_item_code COLLATE utf8mb4_unicode_ci = ri.document_master_request_item_code COLLATE utf8mb4_unicode_ci ");
                 sql.append("AND dsr.is_active = 'YES' ");
-                sql.append("SET ri.approve_status = :APPROVE_STATUS, ");
-                sql.append("ri.note = :NOTE, ");
-                sql.append("ri.updated_at = NOW() ");
                 sql.append("WHERE dr.request_no COLLATE utf8mb4_unicode_ci = :REQUEST_NO COLLATE utf8mb4_unicode_ci ");
-                sql.append("AND dsr.sort_order = :SORT_ORDER");
+                sql.append("AND dsr.sort_order = :SORT_ORDER ");
+                sql.append("ON DUPLICATE KEY UPDATE approve_status = VALUES(approve_status), ");
+                sql.append("note = VALUES(note), updated_at = NOW()");
 
-                int affectedRows = template.update(sql.toString(), namedParameters);
-                if (affectedRows > 0 || inspectionItemExists(requestNo, item.getSortOrder())) {
-                    updatedRows++;
-                }
+                template.update(sql.toString(), namedParameters);
+                updatedRows++;
             }
 
             return updatedRows;
@@ -486,26 +504,6 @@ public class DocumentRequestRepository extends CommonRepository {
             log.error("{}", ex.getMessage());
             throw new BusinessException(AppStatus.EXCEPTION_DATABASE, ex.getMessage());
         }
-    }
-
-    private boolean inspectionItemExists(String requestNo, Integer sortOrder) {
-        MapSqlParameterSource namedParameters = new MapSqlParameterSource()
-                .addValue("REQUEST_NO", requestNo)
-                .addValue("SORT_ORDER", sortOrder);
-
-        String sql = "SELECT COUNT(*) "
-                + "FROM m_document_request_items ri "
-                + "JOIN m_document_request dr "
-                + "ON dr.id COLLATE utf8mb4_unicode_ci = ri.request_id COLLATE utf8mb4_unicode_ci "
-                + "JOIN m_document_setting_requires dsr "
-                + "ON dsr.document_code COLLATE utf8mb4_unicode_ci = dr.document_code COLLATE utf8mb4_unicode_ci "
-                + "AND dsr.document_master_request_item_code COLLATE utf8mb4_unicode_ci = ri.document_master_request_item_code COLLATE utf8mb4_unicode_ci "
-                + "AND dsr.is_active = 'YES' "
-                + "WHERE dr.request_no COLLATE utf8mb4_unicode_ci = :REQUEST_NO COLLATE utf8mb4_unicode_ci "
-                + "AND dsr.sort_order = :SORT_ORDER";
-
-        Integer count = template.queryForObject(sql, namedParameters, Integer.class);
-        return count != null && count > 0;
     }
 
     public String findDocumentStatusIdByThaiName(String statusNameTh) {
