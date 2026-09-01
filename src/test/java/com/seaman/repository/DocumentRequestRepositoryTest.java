@@ -4,6 +4,7 @@ import com.seaman.model.request.DocumentInspectionItemRequest;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.jdbc.core.namedparam.MapSqlParameterSource;
@@ -13,6 +14,7 @@ import org.springframework.test.util.ReflectionTestUtils;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
@@ -51,5 +53,18 @@ class DocumentRequestRepositoryTest {
 
         assertEquals(1, processedRows);
         verify(template).update(anyString(), any(MapSqlParameterSource.class));
+    }
+
+    @Test
+    void findAllSortsCancelledRequestsByLatestCancellationTime() {
+        when(template.queryForList(anyString(), any(MapSqlParameterSource.class))).thenReturn(List.of());
+
+        repository.findAll(0, 20, "ยกเลิก", null, null, null);
+
+        ArgumentCaptor<String> sqlCaptor = ArgumentCaptor.forClass(String.class);
+        verify(template).queryForList(sqlCaptor.capture(), any(MapSqlParameterSource.class));
+        assertTrue(sqlCaptor.getValue().contains(
+                "ORDER BY cancelled_at DESC, dr.submitted_at DESC, dr.created_at DESC"
+        ));
     }
 }

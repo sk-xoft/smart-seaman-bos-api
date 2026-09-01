@@ -24,7 +24,6 @@ import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
-import java.time.ZoneOffset;
 import java.time.format.DateTimeFormatter;
 import java.util.Date;
 import java.util.List;
@@ -110,6 +109,7 @@ public class DocumentRenewalDetailService {
         response.setStatus(status);
         response.setSubmittedAt(formatDatetime(row.get("submitted_at")));
         response.setResubmittedAt(formatDatetime(row.get("resubmitted_at")));
+        response.setCancelledAt(formatDatetime(row.get("cancelled_at")));
         response.setAmount((BigDecimal) row.get("amount"));
         response.setIsResubmit(toBoolean(row.get("is_resubmit")));
         response.setProfile(profileService.getProfile(response.getMobileUserUuid()));
@@ -340,7 +340,7 @@ public class DocumentRenewalDetailService {
     private String formatDatetime(Object value) {
         if (value == null) return null;
         if (value instanceof LocalDateTime) {
-            return DATETIME_FMT.format(((LocalDateTime) value).atZone(ZoneOffset.UTC));
+            return DATETIME_FMT.format(((LocalDateTime) value).atZone(BANGKOK));
         }
         if (value instanceof java.sql.Timestamp) {
             return DATETIME_FMT.format(((java.sql.Timestamp) value).toInstant());

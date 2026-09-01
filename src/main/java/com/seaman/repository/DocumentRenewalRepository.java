@@ -25,6 +25,9 @@ public class DocumentRenewalRepository extends CommonRepository {
                     "(SELECT MAX(dt.actioned_at) FROM m_document_transaction dt " +
                     " WHERE dt.request_id COLLATE utf8mb4_unicode_ci = dr.id COLLATE utf8mb4_unicode_ci " +
                     " AND dt.action = 'RESUBMIT') AS resubmitted_at, " +
+                    "(SELECT MAX(dt.actioned_at) FROM m_document_transaction dt " +
+                    " WHERE dt.request_id COLLATE utf8mb4_unicode_ci = dr.id COLLATE utf8mb4_unicode_ci " +
+                    " AND dt.action = 'CANCEL') AS cancelled_at, " +
                     "ds.id AS status_id, ds.document_status_code, " +
                     "ds.document_mobile_status_name_th AS status_name_th, " +
                     "ds.document_mobile_status_name_en AS status_name_en, " +

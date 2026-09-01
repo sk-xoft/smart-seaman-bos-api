@@ -11,6 +11,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.sql.Timestamp;
+import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -63,6 +64,7 @@ class DocumentRenewalDetailServiceTest {
                 row.put("is_resubmit", 1);
                 row.put("submitted_at", Timestamp.valueOf("2026-05-01 08:30:00"));
                 row.put("resubmitted_at", Timestamp.valueOf("2026-05-03 09:00:00"));
+                row.put("cancelled_at", Timestamp.valueOf("2026-05-04 10:15:00"));
                 when(repository.findByRequestNo(requestNo)).thenReturn(row);
                 when(repository.findItemsByRequestId(requestId, null)).thenReturn(List.of());
                 when(repository.findFilesByRequestId(requestId)).thenReturn(List.of());
@@ -71,6 +73,7 @@ class DocumentRenewalDetailServiceTest {
 
                 assertEquals("01/05/2026 08:30", response.getSubmittedAt());
                 assertEquals("03/05/2026 09:00", response.getResubmittedAt());
+                assertEquals("04/05/2026 10:15", response.getCancelledAt());
                 assertEquals(true, response.getIsResubmit());
         }
 
@@ -91,6 +94,24 @@ class DocumentRenewalDetailServiceTest {
                 DocumentRenewalDetailResponse response = service.detail(requestNo);
 
                 assertNull(response.getResubmittedAt());
+        }
+
+        @Test
+        void detailDoesNotApplyBangkokOffsetTwiceToCancellationDatetime() {
+                String requestNo = "260700048";
+                String requestId = "request-id-3";
+                Map<String, Object> row = new HashMap<>();
+                row.put("id", requestId);
+                row.put("request_no", requestNo);
+                row.put("document_status_code", "CANCELLED");
+                row.put("cancelled_at", LocalDateTime.of(2026, 9, 1, 23, 41));
+                when(repository.findByRequestNo(requestNo)).thenReturn(row);
+                when(repository.findItemsByRequestId(requestId, null)).thenReturn(List.of());
+                when(repository.findFilesByRequestId(requestId)).thenReturn(List.of());
+
+                DocumentRenewalDetailResponse response = service.detail(requestNo);
+
+                assertEquals("01/09/2026 23:41", response.getCancelledAt());
         }
 
     @Test

@@ -18,6 +18,7 @@ public class DocumentRenewalDetailResponse {
     private DocumentRenewalSummaryStatusResponse status;
     private String submittedAt;
     private String resubmittedAt;
+    private String cancelledAt;
     private BigDecimal amount;
     private Boolean isResubmit;
     private ProfileResponse profile;

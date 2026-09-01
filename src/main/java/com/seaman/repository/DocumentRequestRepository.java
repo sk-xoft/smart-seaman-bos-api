@@ -22,6 +22,9 @@ public class DocumentRequestRepository extends CommonRepository {
     private static final String SELECT_DOCUMENT_REQUEST_SELECT =
             "SELECT dr.*, " +
             "dr.document_status_id AS document_status_id, " +
+            "(SELECT MAX(dt.actioned_at) FROM m_document_transaction dt " +
+            " WHERE dt.request_id COLLATE utf8mb4_unicode_ci = dr.id COLLATE utf8mb4_unicode_ci " +
+            " AND dt.action = 'CANCEL') AS cancelled_at, " +
             "ds.name_th AS document_status_name_th, " +
             "ds.name_en AS document_status_name_en, " +
             "CONCAT(COALESCE(ds.name_th, ''), ' / ', COALESCE(ds.name_en, '')) AS document_status_display_name, " +
@@ -73,7 +76,11 @@ public class DocumentRequestRepository extends CommonRepository {
             sql.append(SELECT_DOCUMENT_REQUEST_FROM);
 
             appendFilters(sql, namedParameters, status, smartSeamanId, firstName, requestNo);
-            sql.append(" ORDER BY dr.submitted_at DESC, dr.created_at DESC LIMIT :START, :ROW");
+            if ("ยกเลิก".equals(status)) {
+                sql.append(" ORDER BY cancelled_at DESC, dr.submitted_at DESC, dr.created_at DESC LIMIT :START, :ROW");
+            } else {
+                sql.append(" ORDER BY dr.submitted_at DESC, dr.created_at DESC LIMIT :START, :ROW");
+            }
 
             return template.queryForList(sql.toString(), namedParameters);
         } catch (Exception ex) {
