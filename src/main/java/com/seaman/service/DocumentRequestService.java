@@ -566,9 +566,18 @@ public class DocumentRequestService {
                     String previousTrackingNo = previousDelivery == null
                             ? null
                             : stringValue(previousDelivery.get("tracking_no"));
-                    String previousShippedDate = previousDelivery == null
+                        Map<String, Object> previousDeliveryTransaction = requestId == null
                             ? null
-                            : normalizeDateValue(previousDelivery.get("shipped_date"));
+                            : documentRequestRepository.findLatestDeliveryTransactionInfo(requestId);
+                        String previousShippedDate = extractTransactionNoteValue(
+                            previousDeliveryTransaction == null
+                                ? null
+                                : stringValue(previousDeliveryTransaction.get("note")),
+                            "shippedDate"
+                        );
+                        if (previousShippedDate == null && previousDelivery != null) {
+                        previousShippedDate = normalizeDateValue(previousDelivery.get("shipped_date"));
+                        }
 
                     int deliveryRows = documentRequestRepository.upsertDeliveryInfoByRequestNo(
                             requestNo,
@@ -813,7 +822,7 @@ public class DocumentRequestService {
             DocumentInspectionItemRequest normalized = new DocumentInspectionItemRequest();
             normalized.setSortOrder(item.getSortOrder());
             normalized.setCheckResult(checkResult);
-            normalized.setCheckNote("fix".equals(checkResult) ? checkNote : "");
+            normalized.setCheckNote(checkNote);
             normalizedItems.add(normalized);
         }
 
@@ -919,9 +928,6 @@ public class DocumentRequestService {
     }
 
     private String normalizedInspectionNote(String result, String note) {
-        if (!"fix".equals(normalizedInspectionValue(result))) {
-            return "";
-        }
         return note == null ? "" : note.trim();
     }
 
@@ -968,6 +974,19 @@ public class DocumentRequestService {
         }
         String normalized = String.valueOf(value).trim();
         return normalized.length() >= 10 ? normalized.substring(0, 10) : normalized;
+    }
+
+    private String extractTransactionNoteValue(String note, String key) {
+        if (note == null || key == null) return null;
+        String prefix = key + "=";
+        for (String entry : note.split(";")) {
+            String value = entry.trim();
+            if (value.startsWith(prefix)) {
+                String extracted = value.substring(prefix.length()).trim();
+                return extracted.isEmpty() ? null : extracted;
+            }
+        }
+        return null;
     }
 
     private String normalizeTrackingNo(String trackingNo) {

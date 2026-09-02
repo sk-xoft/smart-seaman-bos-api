@@ -26,6 +26,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.anyList;
 import static org.mockito.ArgumentMatchers.anyString;
@@ -108,11 +109,11 @@ class DocumentRequestServiceTest {
 
     @Test
     void unchangedInspectionDoesNotNotify() {
-        DocumentInspectionSaveRequest request = inspectionRequest(1, "pass", "ignored");
+        DocumentInspectionSaveRequest request = inspectionRequest(1, "pass", "ตรวจสอบแล้ว");
         when(documentRequestRepository.findDocumentRequestSummaryByRequestNo(REQUEST_NO))
                 .thenReturn(summary("WAITING", MOBILE_USER_UUID));
         when(documentRequestRepository.findDetailItemsByRequestNo(REQUEST_NO))
-                .thenReturn(List.of(attachment(1, "สำเนาหนังสือเดินทาง", "PASS", null)));
+                .thenReturn(List.of(attachment(1, "สำเนาหนังสือเดินทาง", "PASS", "ตรวจสอบแล้ว")));
         when(documentRequestRepository.updateInspectionResults(
                 org.mockito.ArgumentMatchers.eq(REQUEST_NO), anyList())).thenReturn(1);
         when(documentRequestRepository.areAllRequiredDocumentItemsPassed(REQUEST_NO)).thenReturn(true);
@@ -121,6 +122,27 @@ class DocumentRequestServiceTest {
 
         verify(sendNotificationService, never()).sendNotification(
                 anyString(), anyString(), anyString(), anyString(), anyString(), anyString());
+    }
+
+    @Test
+    void passInspectionPreservesTrimmedNote() {
+        DocumentInspectionSaveRequest request = inspectionRequest(1, "pass", "  ตรวจสอบแล้ว  ");
+        when(documentRequestRepository.findDocumentRequestSummaryByRequestNo(REQUEST_NO))
+                .thenReturn(summary("WAITING", MOBILE_USER_UUID));
+        when(documentRequestRepository.findDetailItemsByRequestNo(REQUEST_NO))
+                .thenReturn(List.of(attachment(1, "สำเนาหนังสือเดินทาง", "PASS", "ตรวจสอบแล้ว")));
+        when(documentRequestRepository.updateInspectionResults(
+                org.mockito.ArgumentMatchers.eq(REQUEST_NO), anyList())).thenReturn(1);
+        when(documentRequestRepository.areAllRequiredDocumentItemsPassed(REQUEST_NO)).thenReturn(true);
+
+        service.saveDocumentRequestInspection(request);
+
+        @SuppressWarnings("unchecked")
+        ArgumentCaptor<List<DocumentInspectionItemRequest>> inspectionsCaptor =
+                ArgumentCaptor.forClass(List.class);
+        verify(documentRequestRepository).updateInspectionResults(
+                org.mockito.ArgumentMatchers.eq(REQUEST_NO), inspectionsCaptor.capture());
+        assertEquals("ตรวจสอบแล้ว", inspectionsCaptor.getValue().get(0).getCheckNote());
     }
 
     @Test

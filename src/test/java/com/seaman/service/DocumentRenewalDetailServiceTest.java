@@ -11,6 +11,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.sql.Timestamp;
+import java.sql.Date;
 import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.List;
@@ -97,6 +98,32 @@ class DocumentRenewalDetailServiceTest {
         }
 
         @Test
+        void detailIncludesNoteForPassedInspectionItem() {
+                String requestNo = "MOCK-BOS-260902-02";
+                String requestId = "request-id-pass-note";
+                Map<String, Object> row = new HashMap<>();
+                row.put("id", requestId);
+                row.put("request_no", requestNo);
+                row.put("document_code", "DOC007");
+                row.put("document_status_code", "PENDING_DOCUMENT_REVIEW");
+                Map<String, Object> item = new HashMap<>();
+                item.put("id", "item-id");
+                item.put("document_master_request_item_code", "MRI001");
+                item.put("document_master_items_name", "สำเนาบัตรประชาชน");
+                item.put("approve_status", "PASS");
+                item.put("check_note", "กก");
+                item.put("sort_order", 1);
+                when(repository.findByRequestNo(requestNo)).thenReturn(row);
+                when(repository.findItemsByRequestId(requestId, "DOC007")).thenReturn(List.of(item));
+                when(repository.findFilesByRequestId(requestId)).thenReturn(List.of());
+
+                DocumentRenewalDetailResponse response = service.detail(requestNo);
+
+                assertEquals("pass", response.getItems().get(0).getCheckResult());
+                assertEquals("กก", response.getItems().get(0).getCheckNote());
+        }
+
+        @Test
         void detailDoesNotApplyBangkokOffsetTwiceToCancellationDatetime() {
                 String requestNo = "260700048";
                 String requestId = "request-id-3";
@@ -112,6 +139,31 @@ class DocumentRenewalDetailServiceTest {
                 DocumentRenewalDetailResponse response = service.detail(requestNo);
 
                 assertEquals("01/09/2026 23:41", response.getCancelledAt());
+        }
+
+        @Test
+        void detailUsesSelectedShipmentDatetimeFromTransactionNote() {
+                String requestNo = "260700049";
+                String requestId = "request-id-delivery-time";
+                Map<String, Object> row = new HashMap<>();
+                row.put("id", requestId);
+                row.put("request_no", requestNo);
+                row.put("document_status_code", "DELIVERING");
+                when(repository.findByRequestNo(requestNo)).thenReturn(row);
+                when(repository.findItemsByRequestId(requestId, null)).thenReturn(List.of());
+                when(repository.findFilesByRequestId(requestId)).thenReturn(List.of());
+                when(repository.findDeliveryByRequestId(requestId)).thenReturn(Map.of(
+                        "tracking_no", "ED363095983TH",
+                        "shipped_date", Date.valueOf("2026-09-01")
+                ));
+                when(documentRequestRepository.findLatestDeliveryTransactionInfo(requestId)).thenReturn(Map.of(
+                        "note", "trackingNo=ED363095983TH; shippedDate=2026-09-01 14:35:00"
+                ));
+
+                DocumentRenewalDetailResponse response = service.detail(requestNo);
+
+                assertEquals("2026-09-01 14:35:00", response.getDelivery().getShippedDate());
+                assertEquals("2026-09-01 14:35:00", response.getDelivery().getShippedDateValue());
         }
 
     @Test

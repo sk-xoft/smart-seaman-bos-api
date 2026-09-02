@@ -21,7 +21,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
-import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
@@ -51,8 +50,6 @@ public class DocumentRenewalDetailService {
     private static final ZoneId BANGKOK = ZoneId.of("Asia/Bangkok");
     private static final DateTimeFormatter DATETIME_FMT =
             DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm").withZone(BANGKOK);
-    private static final DateTimeFormatter DATE_FMT =
-            DateTimeFormatter.ofPattern("dd/MM/yyyy");
 
     private static final Map<String, Integer> STATUS_STEP = Map.of(
             "PAYMENT_PENDING", 1,
@@ -125,7 +122,8 @@ public class DocumentRenewalDetailService {
         }
         if (DELIVERY_STATUSES.contains(statusCode)) {
             Map<String, Object> deliveryRow = repository.findDeliveryByRequestId(requestId);
-            if (deliveryRow != null) response.setDelivery(mapDelivery(deliveryRow));
+            Map<String, Object> deliveryTransaction = documentRequestRepository.findLatestDeliveryTransactionInfo(requestId);
+            if (deliveryRow != null) response.setDelivery(mapDelivery(deliveryRow, deliveryTransaction));
         }
 
         return response;
@@ -249,7 +247,7 @@ public class DocumentRenewalDetailService {
         r.setSortOrder(toInt(item.get("sort_order")));
         r.setFileUploaded(!files.isEmpty());
         r.setCheckResult(approveStatus == null ? null : approveStatus.toLowerCase());
-        r.setCheckNote("FIX".equalsIgnoreCase(approveStatus) ? str(item, "check_note") : null);
+        r.setCheckNote(str(item, "check_note"));
         r.setIsUpdated(files.stream().anyMatch(f -> toBoolean(f.get("is_updated"))));
         r.setFiles(files.stream().map(this::mapFile).collect(Collectors.toList()));
         return r;
@@ -281,12 +279,22 @@ public class DocumentRenewalDetailService {
         return r;
     }
 
-    private DocumentRenewalDeliveryResponse mapDelivery(Map<String, Object> row) {
+    private DocumentRenewalDeliveryResponse mapDelivery(
+            Map<String, Object> row,
+            Map<String, Object> deliveryTransaction
+    ) {
         DocumentRenewalDeliveryResponse r = new DocumentRenewalDeliveryResponse();
+        String shippedDateValue = extractNoteValue(
+                deliveryTransaction == null ? null : str(deliveryTransaction, "note"),
+                "shippedDate"
+        );
+        if (shippedDateValue == null) {
+            shippedDateValue = str(row, "shipped_date");
+        }
         r.setTrackingNo(str(row, "tracking_no"));
         r.setCarrier(str(row, "carrier"));
-        r.setShippedDate(formatDate(row.get("shipped_date")));
-        r.setShippedDateValue(str(row, "shipped_date"));
+        r.setShippedDate(shippedDateValue);
+        r.setShippedDateValue(shippedDateValue);
         r.setDeliveryStatus(str(row, "delivery_status"));
         r.setShippedRecordedAt(formatDatetime(row.get("shipped_recorded_at")));
         r.setShippedBy(str(row, "shipped_by"));
@@ -296,6 +304,19 @@ public class DocumentRenewalDetailService {
         r.setShippedByMobileNumber(str(row, "shipped_by_mobile_number"));
         r.setDeliveredAt(formatDatetime(row.get("delivered_at")));
         return r;
+    }
+
+    private String extractNoteValue(String note, String key) {
+        if (note == null || key == null) return null;
+        String prefix = key + "=";
+        for (String entry : note.split(";")) {
+            String value = entry.trim();
+            if (value.startsWith(prefix)) {
+                String extracted = value.substring(prefix.length()).trim();
+                return extracted.isEmpty() ? null : extracted;
+            }
+        }
+        return null;
     }
 
     private Map<String, Object> buildDeptResult(String requestId) {
@@ -349,15 +370,6 @@ public class DocumentRenewalDetailService {
             return DATETIME_FMT.format(((java.util.Date) value).toInstant());
         }
         return null;
-    }
-
-    private String formatDate(Object value) {
-        if (value == null) return null;
-        if (value instanceof java.sql.Date) {
-            LocalDate ld = ((java.sql.Date) value).toLocalDate();
-            return ld.format(DATE_FMT);
-        }
-        return formatDatetime(value);
     }
 
     private String str(Map<String, Object> map, String key) {

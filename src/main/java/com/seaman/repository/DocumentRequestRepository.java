@@ -755,7 +755,7 @@ public class DocumentRequestRepository extends CommonRepository {
             sql.append("INSERT INTO m_delivery (");
             sql.append("request_id, delivery_address_id, tracking_no, carrier, shipped_date, delivery_status, shipped_recorded_at, shipped_by, delivered_at, created_at, updated_at");
             sql.append(") ");
-            sql.append("SELECT dr.id, NULL, :TRACKING_NO, 'Thailand Post', STR_TO_DATE(:SHIPPED_DATE, '%Y-%m-%d'), 'in_transit', NOW(), :SHIPPED_BY, NULL, NOW(), NOW() ");
+            sql.append("SELECT dr.id, NULL, :TRACKING_NO, 'Thailand Post', DATE(:SHIPPED_DATE), 'in_transit', NOW(), :SHIPPED_BY, NULL, NOW(), NOW() ");
             sql.append("FROM m_document_request dr ");
             sql.append("WHERE dr.request_no COLLATE utf8mb4_unicode_ci = :REQUEST_NO COLLATE utf8mb4_unicode_ci ");
             sql.append("ON DUPLICATE KEY UPDATE ");
