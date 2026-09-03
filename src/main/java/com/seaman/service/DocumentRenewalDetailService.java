@@ -219,11 +219,16 @@ public class DocumentRenewalDetailService {
             Map<?, ?> event = (Map<?, ?>) rawEvent;
             String statusCode = String.valueOf(event.get("statusCode"));
             String status = String.valueOf(event.get("status")).toLowerCase(Locale.ROOT);
-            if ("501".equals(statusCode)
+                boolean unsuccessful = status.contains("ไม่สำเร็จ")
+                    || status.contains("undelivered")
+                    || status.contains("not delivered")
+                    || status.contains("delivery failed")
+                    || status.contains("failed delivery");
+                if (!unsuccessful && ("501".equals(statusCode)
                     || status.contains("นำจ่ายสำเร็จ")
                     || status.contains("นำส่งสำเร็จ")
                     || status.contains("จัดส่งสำเร็จ")
-                    || status.contains("delivered")) {
+                    || "delivered".equals(status.trim()))) {
                 return true;
             }
         }
