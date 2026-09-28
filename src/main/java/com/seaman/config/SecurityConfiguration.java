@@ -73,8 +73,8 @@ public class SecurityConfiguration extends WebSecurityConfigurerAdapter {
         http.cors(config -> {
                     CorsConfiguration cors = new CorsConfiguration();
                     cors.setAllowCredentials(true);
-                    cors.setAllowedOriginPatterns(Collections.singletonList("https://*"));
-                        cors.setAllowedOrigins(List.of(
+                    cors.setAllowedOrigins(List.of(
+                            "https://dev.smartseaman.com",
                             "https://smartseaman.com",
                             "http://localhost:8080",
                             "http://127.0.0.1:8080",
@@ -87,6 +87,7 @@ public class SecurityConfiguration extends WebSecurityConfigurerAdapter {
                     cors.addAllowedMethod("PUT");
                     cors.addAllowedMethod("DELETE");
                     cors.addAllowedMethod("OPTIONS");
+                    cors.setExposedHeaders(List.of("Content-Disposition"));
 
                     UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
                     source.registerCorsConfiguration("/**", cors);

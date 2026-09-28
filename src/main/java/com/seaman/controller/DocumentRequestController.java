@@ -27,6 +27,7 @@ import org.springframework.web.multipart.MultipartFile;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.validation.Valid;
+import java.nio.charset.StandardCharsets;
 import java.util.Map;
 
 import static org.springframework.http.ResponseEntity.ok;
@@ -186,7 +187,9 @@ public class DocumentRequestController extends BaseController {
 
                 HttpHeaders headers = new HttpHeaders();
                 headers.setContentType(MediaType.parseMediaType(contentType));
-                headers.setContentDisposition(ContentDisposition.builder(download ? "attachment" : "inline").filename(fileName).build());
+                headers.setContentDisposition(ContentDisposition.builder(download ? "attachment" : "inline")
+                        .filename(fileName, StandardCharsets.UTF_8)
+                        .build());
 
                 return new ResponseEntity<>(content, headers, HttpStatus.OK);
         }
